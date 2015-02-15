@@ -90,6 +90,7 @@ void Crypto::decryptPacket(NetPacket& packet, const Server &s, const PublicKey& 
     std::vector<char> plaintext(plainsize);
     char* nonce = &packet.data[0], *encrypted=&packet.data[0]+crypto_box_NONCEBYTES;
     decrypt(&plaintext[0], &remoteKey[0], &s.getSecretKey()[0], nonce, encrypted, plainsize);
+    plaintext.resize(plainsize-crypto_box_BOXZEROBYTES);
     packet.data = plaintext;
 }
 

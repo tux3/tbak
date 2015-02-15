@@ -290,6 +290,17 @@ void Folder::writeArchiveFile(const std::vector<char>& data)
     size_t metasize = fmeta.metadataSize();
     cout << "fmeta has "<<fmeta.rawSize<<" raw bytes, "<<fmeta.actualSize<<" actual bytes, "<<metasize<< " meta bytes and "
          <<data.size()-metasize<<" data bytes"<<endl;
+
+    vector<char> content; ///< TODO: Remove this, we don't want to copy gigabytes around
+    std::copy(it, data.cend(), back_inserter(content));
+    cout << "Content (hex) : '";
+    for (char c : content)
+        cout << hex << (int)(uint8_t)c << dec << " ";
+    cout <<"'"<<endl;
+    cout << "Content (raw) : '";
+    for (char c : content)
+        cout << c;
+    cout <<"'"<<endl;
 }
 
 std::string Folder::normalizePath(const std::string& folder)

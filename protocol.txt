@@ -52,3 +52,7 @@ if the packet data size isn't equal to actualSize, the client should reject the 
 Ask the node to reload its folder (open(true)/close()))
 We can't reload every time the client make a requests, that would destroy the disk.
 But once before every sync should be good.
+
+/// TODO: Update files
+When we download a file and run Folder::writeArchiveFile, if that file already exists (is being updated)
+when need to find the previous one and update it, not add a new File to files.

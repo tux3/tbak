@@ -30,6 +30,7 @@ void printHelp()
             "folder remove-archive : Stop tracking an archive folder\n"
             "folder update : Update the files database manually\n"
             "folder sync : Update and synchronize this folder with other nodes\n"
+            "folder restore : Overwrite this source folder with the node's archives\n"
             "node show : Show the list of storage nodes\n"
             "node status : Query the status of storage nodes\n"
             "node add : Add a storage node\n"
@@ -242,6 +243,7 @@ int main(int argc, char* argv[])
                 return -1;
             }
 
+            Server server(serverConfigPath(), ndb, fdb);
             const vector<Node>& nodes = ndb.getNodes();
             for (const Node& node : nodes)
             {
@@ -344,7 +346,7 @@ int main(int argc, char* argv[])
                                 cout << "Download failed\n";
                                 continue;
                             }
-                            lfolder->writeArchiveFile(reply.data);
+                            lfolder->writeArchiveFile(reply.data, server, node.getPk());
                         }
                     }
 
@@ -368,6 +370,139 @@ int main(int argc, char* argv[])
                     });
                     cout << "Need to upload "<<diff.size()<<" files"<<endl;
                 }
+            }
+        }
+        else if (subcommand == "restore")
+        {
+            if (argc < 4)
+                return -1;
+            string folderpath{Folder::normalizePath(argv[3])};
+
+            struct entry {
+                string path;
+                uint64_t mtime;
+                bool operator<(const entry& other){return path<other.path;}
+            };
+            vector<entry> lEntries;
+            Folder* lfolder=nullptr;
+            for (Folder& f : fdb.getFolders())
+            {
+                if (f.getPath() == folderpath && f.getType() == FolderType::Source)
+                {
+                    lfolder = &f;
+                    f.open(true);
+                    for (const File& file : f.getFiles())
+                    {
+                        entry e;
+                        e.path = file.path;
+                        e.mtime = file.attrs.mtime;
+                        lEntries.push_back(e);
+                    }
+                    f.close();
+                    break;
+                }
+            }
+            if (!lfolder)
+            {
+                cerr << "Local source folder to restore not found"<<endl;
+                return -1;
+            }
+
+            Server server(serverConfigPath(), ndb, fdb);
+            const vector<Node>& nodes = ndb.getNodes();
+            for (const Node& node : nodes)
+            {
+                cout << "Restoring from "<<node.getUri()<<"..."<<endl;
+                Server server(serverConfigPath(), ndb, fdb);
+                NetSock sock(NetAddr{node.getUri()});
+                if (!Net::sendAuth(sock, server))
+                {
+                    cerr << "Couldn't authenticate with that node"<<endl;
+                    return -1;
+                }
+
+                // Get status of remote folder
+                unique_ptr<Folder> rfolder;
+                {
+                    NetPacket request{NetPacketType::FolderStats, ::serialize(folderpath)};
+                    Crypto::encryptPacket(request, server, node.getPk());
+                    sock.send(request);
+                    NetPacket reply = sock.recvPacket();
+                    Crypto::decryptPacket(reply, server, node.getPk());
+                    if (reply.type != NetPacketType::FolderStats)
+                    {
+                        cout<<"Unable to get folder stats of remote node "<<node.getUri()<<endl;
+                        continue;
+                    }
+                    rfolder = move(unique_ptr<Folder>(new Folder{reply.data}));
+                }
+
+                // Get list of files and their last access times
+                NetPacket request{NetPacketType::FolderTimeList, ::serialize(folderpath)};
+                Crypto::encryptPacket(request, server, node.getPk());
+                sock.send(request);
+                NetPacket reply = sock.recvPacket();
+                Crypto::decryptPacket(reply, server, node.getPk());
+                if (reply.type != NetPacketType::FolderTimeList)
+                {
+                    cout << "Failed to restore from node "<<node.getUri()<<endl;
+                    continue;
+                }
+
+                vector<char> rFileTimes = Compression::inflate(reply.data);
+                reply.data.clear();
+                reply.data.shrink_to_fit();
+                vector<entry> rEntries;
+                auto it = rFileTimes.cbegin();
+                while (it != rFileTimes.cend())
+                {
+                    entry e;
+                    e.path = ::deserializeConsume<string>(it);
+                    e.mtime = ::deserializeConsume<uint64_t>(it);
+                    rEntries.push_back(e);
+                }
+                rFileTimes.clear();
+                rFileTimes.shrink_to_fit();
+
+                cout << "Got "<<rEntries.size()<<" remote entries"<<endl;
+                cout << "Got "<<lEntries.size()<<" local entries"<<endl;
+
+                // Restore our local source with the remote archive
+                lfolder->open();
+                {
+                    vector<entry> diff;
+                    copy_if(begin(rEntries), end(rEntries), back_inserter(diff), [&lEntries](const entry& re)
+                    {
+                        auto it = find_if(begin(lEntries), end(lEntries), [re](const entry& e)
+                        {
+                            return e.path == re.path;
+                        });
+                        if (it == end(lEntries))
+                            return true;
+                        else
+                            return it->mtime < re.mtime;
+                    });
+                    cout << "Need to download "<<diff.size()<<" files"<<endl;
+
+                    vector<char> folderPathData = ::serialize(folderpath);
+                    for (entry e : diff)
+                    {
+                        cout << "Downloading "<<e.path<<"...\n";
+                        NetPacket request{NetPacketType::DownloadArchiveFile, folderPathData};
+                        vectorAppend(request.data, ::serialize(e.path));
+                        Crypto::encryptPacket(request, server, node.getPk());
+                        sock.send(request);
+                        NetPacket reply = sock.recvPacket();
+                        Crypto::decryptPacket(reply, server, node.getPk());
+                        if (reply.type != NetPacketType::DownloadArchiveFile)
+                        {
+                            cout << "Download failed\n";
+                            continue;
+                        }
+                        lfolder->writeArchiveFile(reply.data, server, node.getPk());
+                    }
+                }
+                lfolder->close();
             }
         }
         else

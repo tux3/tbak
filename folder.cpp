@@ -3,6 +3,8 @@
 #include "sha512.h"
 #include "settings.h"
 #include "filelocker.h"
+#include "crypto.h"
+#include "compression.h"
 #include <dirent.h>
 #include <iostream>
 #include <cstring>
@@ -288,7 +290,7 @@ void Folder::removeData()
         throw std::runtime_error("Folder::removeData: Unknown folder type");
 }
 
-void Folder::writeArchiveFile(const std::vector<char>& data)
+void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, const PublicKey& rpk)
 {
     open();
 
@@ -300,15 +302,30 @@ void Folder::writeArchiveFile(const std::vector<char>& data)
 
     assert(data.size() == fmeta.actualSize);
 
-    string newhash;
-    sha512str(fmeta.path.c_str(), fmeta.path.size(), newhash);
-    string hashdirPath = getFolderDataPath()+"/"+newhash.substr(0,2);
-    createDirectory(hashdirPath);
+    if (type == FolderType::Archive)
+    {
+        string newhash;
+        sha512str(fmeta.path.c_str(), fmeta.path.size(), newhash);
+        string hashdirPath = getFolderDataPath()+"/"+newhash.substr(0,2);
+        createDirectory(hashdirPath);
 
-    string hashfilePath = hashdirPath+"/"+newhash.substr(2);
-    FileLocker filel(hashfilePath);
-    filel.overwrite(data.data()+metasize, fmeta.rawSize);
+        string hashfilePath = hashdirPath+"/"+newhash.substr(2);
+        FileLocker filel(hashfilePath);
+        filel.overwrite(data.data()+metasize, fmeta.rawSize);
+    }
+    else if (type == FolderType::Source)
+    {
+        string abspath = path+"/"+fmeta.path;
+        createPathTo(abspath);
+        vector<char> rawdata(data.begin()+metasize, data.end());
+        Crypto::decrypt(rawdata, s, rpk);
+        Compression::inflate(rawdata);
+        createPathTo(fmeta.path);
+        FileLocker filel(abspath);
+        filel.overwrite(rawdata.data(), rawdata.size());
+    }
 
+    /// TODO: Update records
     files.push_back(fmeta);
     close();
 }
@@ -343,4 +360,18 @@ std::string Folder::normalizeFileName(const std::string& folder, const std::stri
         fileclean = fileclean.substr(folder.size()+1);
     }
     return fileclean;
+}
+
+void Folder::createPathTo(const std::string& relfile)
+{
+    size_t lastpos = 0;
+    for (;;)
+    {
+        lastpos = relfile.find('/', lastpos);
+        if (lastpos == string::npos)
+            break;
+
+        cout << "Need to create "<<relfile.substr(0, lastpos)<<endl;
+        /// TODO: Actually create
+    }
 }

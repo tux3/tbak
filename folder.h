@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 #include "file.h"
+#include "crypto.h"
+
+class Server;
 
 enum class FolderType : uint8_t
 {
@@ -40,7 +43,8 @@ public:
     void open(bool forceupdate=false); ///< Opens and reads the Files database from disk
     void close(); ///< Closes the Files database
     void removeData(); ///< Delete this Folder's Files database and data path
-    void writeArchiveFile(const std::vector<char>& data); ///< Unserialize and write a downloaded archive file to disk
+    /// Unserialize and write a downloaded archive file to disk
+    void writeArchiveFile(const std::vector<char>& data, const Server& s, const PublicKey& rpk);
 
 private:
     std::vector<std::string> listfiles(const char *name, int level); ///< Lists files recursively
@@ -48,6 +52,7 @@ private:
     void updateSizes(); ///< Re-computes rawSize and actualSize
     void createDirectory(const char* path); ///< Create a physical directory on disk
     void createDirectory(const std::string& path); ///< Create a physical directory on disk
+    void createPathTo(const std::string& relfile); ///< Create the necessary directories to a file in this folder
 
 private:
     FolderType type; ///< Type (source/archive) of the folder

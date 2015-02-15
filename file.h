@@ -9,6 +9,7 @@ using std::uint8_t;
 using std::uint16_t;
 using std::uint32_t;
 using std::uint64_t;
+class Folder;
 
 /// Filesystem metadata (permissions, ownership, ...)
 struct FileAttr
@@ -23,8 +24,8 @@ struct FileAttr
 class File
 {
 public:
-    File(const std::string& path); ///< Construct from a real source file
-    File(const std::vector<char>& data); ///< Construct from serialized data
+    File(const Folder* parent, const std::string& path); ///< Construct from a real source file
+    File(const Folder* parent, const std::vector<char>& data); ///< Construct from serialized data
 
     std::vector<char> serialize() const;
     void deserialize(const std::vector<char>& data);
@@ -34,6 +35,7 @@ private:
     void computeCRC(); ///< Assumes path is valid
 
 public:
+    const Folder* parent;
     std::string path; ///< Path of the file relative to it's Folder (the backup folder)
     uint64_t rawSize; ///< Size of the uncompressed, raw file itself
     uint64_t actualSize; ///< Size of the file taking compression, metadata, etc into account

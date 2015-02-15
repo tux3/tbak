@@ -5,18 +5,20 @@
 #include <dirent.h>
 #include <iostream>
 #include <cstring>
+#include <cstdlib>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdexcept>
 #include <fstream>
 #include <cassert>
+#include <limits.h>
 
 using namespace std;
 
 Folder::Folder(const std::string& Path)
 {
     type = FolderType::Source;
-    path = Path;
+    path = normalizePath(Path);
     rawSize = actualSize = 0;
 
     sha512str(path.c_str(), path.size(), hash);
@@ -38,7 +40,7 @@ Folder::~Folder()
 
 std::vector<std::string> Folder::listfiles(const char *name, int level)
 {
-    assert(name[strlen(name)-1] == '/');
+    assert(name[strlen(name)-1] != '/');
     std::vector<std::string> files;
     DIR *dir;
     struct dirent *entry;
@@ -53,7 +55,7 @@ std::vector<std::string> Folder::listfiles(const char *name, int level)
         if (entry->d_type == DT_DIR)
         {
             char path[1024];
-            int len = snprintf(path, sizeof(path)-1, "%s%s/", name, entry->d_name);
+            int len = snprintf(path, sizeof(path)-1, "%s/%s", name, entry->d_name);
             path[len] = 0;
             if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
                 continue;
@@ -63,7 +65,7 @@ std::vector<std::string> Folder::listfiles(const char *name, int level)
         else
         {
             char path[1024];
-            int len = snprintf(path, sizeof(path), "%s%s", name, entry->d_name);
+            int len = snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
             std::string s(path, len);
             files.push_back(s);
         }
@@ -221,7 +223,7 @@ void Folder::open(bool forceupdate)
             files.clear();
             vector<string> filelist = listfiles(path.c_str(), 0);
             for (auto& file : filelist)
-                files.push_back(File(file));
+                files.push_back(File(this,normalizeFileName(path,file)));
         }
     }
     else
@@ -234,7 +236,7 @@ void Folder::open(bool forceupdate)
         auto it = data.cbegin();
         vector<vector<char>> filesData = deserializeConsume<decltype(filesData)>(it);
         for (const vector<char>& vec : filesData)
-            files.push_back(File(vec));
+            files.push_back(File(this,vec));
     }
 
     isOpen = true;
@@ -283,4 +285,25 @@ void Folder::writeArchiveFile(const std::vector<char>& data)
     /// TODO: this
 
     cout << "Folder: got "<<data.size()<<" bytes"<<endl;
+}
+
+std::string Folder::normalizePath(const std::string& folder)
+{
+    char* clean = realpath(folder.c_str(), nullptr);
+    std::string cleanstr(clean);
+    free(clean);
+    return cleanstr;
+}
+
+std::string Folder::normalizeFileName(const std::string& folder, const std::string& file)
+{
+    assert(!folder.empty() && !file.empty());
+    string folderclean = normalizePath(folder);
+    string fileclean = file;
+    if (file.size() > folder.size()
+            && file.find(folder) == 0)
+    {
+        fileclean = fileclean.substr(folder.size()+1);
+    }
+    return fileclean;
 }

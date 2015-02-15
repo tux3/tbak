@@ -32,7 +32,9 @@ std::vector<char> FileLocker::readAll() const noexcept
     lseek(fd, 0, SEEK_SET);
 
     vector<char> data(size);
-    (void) read(fd, data.data(), size);
+    auto r = read(fd, data.data(), size);
+    if (r<0)
+        data.clear();
     return data;
 }
 

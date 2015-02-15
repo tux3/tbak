@@ -110,23 +110,23 @@ int main(int argc, char* argv[])
         else if (subcommand == "remove-source")
         {
             if (argc >= 4)
-                fdb.removeFolder(argv[3], false);
+                fdb.removeFolder(Folder::normalizePath(argv[3]), false);
         }
         else if (subcommand == "remove-archive")
         {
             if (argc >= 4)
-                fdb.removeFolder(argv[3], true);
+                fdb.removeFolder(Folder::normalizePath(argv[3]), true);
         }
         else if (subcommand == "add-source")
         {
             if (argc >= 4)
-                fdb.addFolder(argv[3]);
+                fdb.addFolder(Folder::normalizePath(argv[3]));
         }
         else if (subcommand == "add-archive")
         {
             if (argc < 4)
                 return -1;
-            string folderpath{argv[3]};
+            string folderpath{Folder::normalizePath(argv[3])};
 
             const vector<Node>& nodes = ndb.getNodes();
             for (const Node& node : nodes)
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
         {
             if (argc < 4)
                 return -1;
-            string folderpath{argv[3]};
+            string folderpath{Folder::normalizePath(argv[3])};
 
             for (Folder& folder : fdb.getFolders())
             {
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
             if (argc < 4)
                 return -1;
             printf("%*s %*s %*s %*s\n",24,"URI",8,"Type",12,"Raw size",12,"Actual size");
-            string folderpath{argv[3]};
+            string folderpath{Folder::normalizePath(argv[3])};
             const vector<Node>& nodes = ndb.getNodes();
             for (const Node& node : nodes)
             {
@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
         {
             if (argc < 4)
                 return -1;
-            string folderpath{argv[3]};
+            string folderpath{Folder::normalizePath(argv[3])};
 
             struct entry {
                 string path;

@@ -32,6 +32,9 @@ public:
     size_t getFileCount() const;
     const std::vector<File>& getFiles() const;
 
+    static std::string normalizePath(const std::string& folder);
+    static std::string normalizeFileName(const std::string& folder, const std::string& file);
+
     void open(bool forceupdate=false); ///< Opens and reads the Files database from disk
     void close(); ///< Closes the Files database
     void removeData(); ///< Delete this Folder's Files database and data path

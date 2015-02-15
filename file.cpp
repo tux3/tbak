@@ -1,4 +1,5 @@
 #include "file.h"
+#include "folder.h"
 #include "serialize.h"
 #include "crc32.h"
 #include <iostream>
@@ -7,8 +8,9 @@
 
 using namespace std;
 
-File::File(const std::string& Path)
-    : rawSize{0}, actualSize{0},
+File::File(const Folder *parent, const std::string& Path)
+    : parent{parent},
+      rawSize{0}, actualSize{0},
       crc32{0}, attrs{0,0,0,0}
 {
     path = Path;
@@ -16,7 +18,8 @@ File::File(const std::string& Path)
     computeCRC();
 }
 
-File::File(const std::vector<char>& data)
+File::File(const Folder *parent, const std::vector<char>& data)
+    : parent{parent}
 {
     deserialize(data);
 }
@@ -24,7 +27,7 @@ File::File(const std::vector<char>& data)
 void File::readAttributes()
 {
     struct stat buf;
-    if (stat(path.c_str(), &buf) < 0)
+    if (stat((parent->getPath()+"/"+path).c_str(), &buf) < 0)
     {
         cerr << "WARNING: File::readAttributes: Failed to stat "<<path<<endl;
         return;

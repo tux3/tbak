@@ -222,10 +222,15 @@ int main(int argc, char* argv[])
             for (const Node& node : nodes)
             {
                 Server server(serverConfigPath(), ndb, fdb);
-                NetSock sock(NetAddr{node.getUri()});
+                NetSock sock;
+                if (!sock.connect(NetAddr{node.getUri()}))
+                {
+                    printf("%*s (couldn't connect to node)\n",24,node.getUri().c_str());
+                    continue;
+                }
                 if (!Net::sendAuth(sock, server))
                 {
-                    cout << "Couldn't authenticate with that node"<<endl;
+                    printf("%*s (couldn't authenticate with node)\n",24,node.getUri().c_str());
                     continue;
                 }
 

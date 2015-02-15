@@ -48,10 +48,6 @@ bool NetSock::connect(const NetAddr& addr)
 {
     int result = ::connect(sockfd, addr.sockaddr->ai_addr, addr.sockaddr->ai_addrlen);
     connected = (result >= 0);
-    if (!connected)
-    {
-        perror("connect");
-    }
     return connected;
 }
 

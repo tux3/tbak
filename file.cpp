@@ -2,9 +2,13 @@
 #include "folder.h"
 #include "serialize.h"
 #include "crc32.h"
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
+#include <sys/file.h>
+#include <unistd.h>
+#include <stdexcept>
 
 using namespace std;
 
@@ -86,4 +90,23 @@ void File::deserialize(const std::vector<char>& data)
     attrs.userId = deserializeConsume<decltype(attrs.userId)>(it);
     attrs.groupId = deserializeConsume<decltype(attrs.groupId)>(it);
     attrs.mode = deserializeConsume<decltype(attrs.mode)>(it);
+}
+
+std::vector<char> File::readAll() const
+{
+    string fullpath = parent->getPath()+"/"+path;
+    int fd = open(fullpath.c_str(), O_RDWR);
+    if (fd < 0)
+        throw runtime_error("File::readAll: Unabled to open "+fullpath);
+
+    size_t size = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
+
+    vector<char> data(size);
+    auto r = read(fd, data.data(), size);
+    if (r<0)
+        data.clear();
+
+    close(fd);
+    return data;
 }

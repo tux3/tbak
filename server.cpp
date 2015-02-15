@@ -210,8 +210,50 @@ void Server::handleClient(NetSock& client)
                     auto pit = packet.data.cbegin();
                     string folderpath = ::deserializeConsume<string>(pit);
                     string filepath = ::deserializeConsume<string>(pit);
-                    cout << "Download request: "<<folderpath<<", "<<filepath<<endl;
-                    client.send({NetPacketType::Abort});
+                    cout << "Download archive file request: "<<folderpath<<", "<<filepath<<endl;
+
+                    // Find folder
+                    vector<Folder>& folders = fdb.getFolders();
+                    auto fit = find_if(begin(folders), end(folders), [&folderpath](const Folder& f){return f.getPath()==folderpath;});
+                    if (fit == end(folders))
+                    {
+                        client.send({NetPacketType::Abort});
+                        break;
+                    }
+
+                    // Find file
+                    Folder& folder = *fit;
+                    folder.open();
+                    const std::vector<File>& files = folder.getFiles();
+                    folder.close();
+                    bool found = false;
+                    const File* file = nullptr;
+                    for (const File& f : files)
+                    {
+                        if (f.path == filepath)
+                        {
+                            file = &f;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        client.send({NetPacketType::Abort});
+                        break;
+                    }
+                    vector<char> fdata = file->readAll();
+
+                    // Compress and encrypt if needed
+                    if (folder.getType() == FolderType::Source)
+                    {
+                        /// TODO: this
+                    }
+
+                    // Send result
+                    NetPacket reply{NetPacketType::DownloadArchiveFile, fdata};
+                    Crypto::encryptPacket(reply, *this, remoteKey);
+                    client.send(reply);
                 }
                 else
                 {

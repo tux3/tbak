@@ -29,6 +29,7 @@ public:
 
     std::vector<char> serialize() const;
     void deserialize(const std::vector<char>& data);
+    std::vector<char> readAll() const;
 
 private:
     void readAttributes(); ///< Assumes path is valid

@@ -319,7 +319,7 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
         createPathTo(abspath);
         vector<char> rawdata(data.begin()+metasize, data.end());
         Crypto::decrypt(rawdata, s, rpk);
-        Compression::inflate(rawdata);
+        rawdata = Compression::inflate(rawdata);
         createPathTo(fmeta.path);
         FileLocker filel(abspath);
         filel.overwrite(rawdata.data(), rawdata.size());

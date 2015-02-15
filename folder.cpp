@@ -224,6 +224,11 @@ void Folder::open(bool forceupdate)
             for (auto& file : filelist)
                 files.push_back(File(this,normalizeFileName(path,file)));
         }
+        else if (type == FolderType::Archive)
+        {
+            createDirectory(dataPath()+"/archive/"+hash);
+            files.clear();
+        }
     }
     else
     {

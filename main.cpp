@@ -1,8 +1,10 @@
 #include <iostream>
 #include <cstdlib>
 #include <sys/stat.h>
+#include <signal.h>
 #include <memory>
 #include <algorithm>
+#include <thread>
 #include "nodedb.h"
 #include "folderdb.h"
 #include "settings.h"
@@ -50,6 +52,12 @@ void checkDataDir()
     }
 }
 
+void sigtermHandler(int)
+{
+    Server::abortall = true;
+    std::cout << "Caught signal, exiting gracefully..."<<endl;
+}
+
 int main(int argc, char* argv[])
 {
     if (argc<2)
@@ -69,6 +77,13 @@ int main(int argc, char* argv[])
 
     FolderDB fdb(folderDBPath());
     NodeDB ndb(nodeDBPath());
+
+    struct sigaction sigactionHandler;
+    sigactionHandler.sa_handler = sigtermHandler;
+    sigemptyset(&sigactionHandler.sa_mask);
+    sigactionHandler.sa_flags = 0;
+    sigaction(SIGINT, &sigactionHandler, nullptr);
+    sigaction(SIGTERM, &sigactionHandler, nullptr);
 
     if (argc<3)
     {
@@ -131,11 +146,16 @@ int main(int argc, char* argv[])
                 Crypto::decryptPacket(reply, server, node.getPk());
                 if (reply.type != NetPacketType::FolderStats)
                 {
+                    cout << "Node "<<node.getUri()<<" replied with "<<(int)reply.type<<endl;
                     continue;
                 }
+                cout << "Found folder on node "<<node.getUri()<<endl;
                 Folder f{reply.data};
                 f.setType(FolderType::Archive);
+                f.open(true);
+                f.close();
                 fdb.addFolder(f);
+                break;
             }
         }
         else if (subcommand == "update")
@@ -356,7 +376,11 @@ int main(int argc, char* argv[])
         else if (subcommand == "start")
         {
             Server server(serverConfigPath(), ndb, fdb);
-            return server.exec();
+            int r = server.exec();
+            cout << "Server exiting with status "<<r<<endl;
+            fdb.save();
+            ndb.save();
+            return r;
         }
         else
         {
@@ -368,8 +392,8 @@ int main(int argc, char* argv[])
         cout << "Not implemented\n";
     }
 
-    fdb.save(folderDBPath());
-    ndb.save(nodeDBPath());
+    fdb.save();
+    ndb.save();
 
     return 0;
 }

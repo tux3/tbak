@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "folder.h"
+#include "filelocker.h"
 
 /// TODO: Store archives in ~/.tbak/<hash of the folder path>
 /// So this way we can always find it in the remote
@@ -14,11 +15,10 @@ class FolderDB
 {
 public:
     FolderDB(const std::string& path); ///< Reads serialized data from file
-    FolderDB(const std::vector<char> &data);
 
-    void load(const std::string& path);
+    void load();
     void deserialize(const std::vector<char>& data);
-    void save(const std::string& path) const;
+    void save() const;
     std::vector<char> serialize() const;
 
     std::vector<Folder>& getFolders();
@@ -29,6 +29,7 @@ public:
 
 private:
     std::vector<Folder> folders;
+    FileLocker file;
 };
 
 #endif // FOLDERDB_H

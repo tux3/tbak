@@ -21,9 +21,10 @@ SOURCES += main.cpp \
     netsock.cpp \
     server.cpp \
     sha512.cpp \
-    compression.cpp
+    compression.cpp \
+    filelocker.cpp
 
-CONFIG += c++14
+CONFIG += c++11
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -46,6 +47,7 @@ HEADERS += \
     netsock.h \
     server.h \
     sha512.h \
-    compression.h
+    compression.h \
+    filelocker.h
 
 LIBS += -lsodium -lz

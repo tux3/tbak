@@ -7,25 +7,14 @@
 using namespace std;
 
 FolderDB::FolderDB(const string &path)
+    : file{path}
 {
-    load(path);
+    load();
 }
 
-FolderDB::FolderDB(const vector<char> &data)
+void FolderDB::save() const
 {
-    if (!data.empty())
-        deserialize(data);
-}
-
-void FolderDB::save(const string &path) const
-{
-    vector<char> data = serialize();
-    ofstream f(path, ios_base::binary | ios_base::trunc);
-    if (f.is_open())
-    {
-        copy(begin(data), end(data), ostreambuf_iterator<char>(f));
-        f.close();
-    }
+    file.overwrite(serialize());
 }
 
 vector<char> FolderDB::serialize() const
@@ -41,15 +30,9 @@ vector<char> FolderDB::serialize() const
     return data;
 }
 
-void FolderDB::load(const std::string& path)
+void FolderDB::load()
 {
-    ifstream f(path, ios_base::binary);
-    vector<char> data((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
-    if (f.is_open())
-        f.close();
-
-    if (!data.empty())
-        deserialize(data);
+    deserialize(file.readAll());
 }
 
 void FolderDB::deserialize(const std::vector<char> &data)

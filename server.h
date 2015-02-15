@@ -3,6 +3,7 @@
 
 #include "netsock.h"
 #include "crypto.h"
+#include <atomic>
 
 class NodeDB;
 class FolderDB;
@@ -33,6 +34,9 @@ private:
     PublicKey pk;
     NodeDB& ndb;
     FolderDB& fdb;
+
+public:
+    static std::atomic<bool> abortall; ///< If set to true, the server will return form its event loop
 };
 
 #endif // SERVER_H

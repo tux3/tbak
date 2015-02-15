@@ -40,19 +40,9 @@ When building a diff, we download a file if the remote's version is newer, and u
 so that after transfer the two files have the same lastSyncedTime.
 When a node downloads or uploads a file, it must lock this file. Any request to read/write a locked file must fail.
 
-/// TODO
-Encryption shouldn't be handled at the socket level, but by the client/server.
-There should be a packet to authenticate, and a server should maintain a flag after authentication.
-Any unauthenticated request that should have been will be replied to with an abort.
-This implies again that the socket or packets should not decrypt themselves.
-The server will do the decryption iff auth was successfull.
-This greatly reduces the attack surface, your packets will just be ignored if you don't auth first or use only unauthed requests.
-
-/// TODO
-The Folder class shouldn't store it's std::vector<File> in its normal serialized data
-That would make the FolderDB really huge and slow down everything, we don't want that.
-Instead, the Folder should have open/close operations that load/unload the vector<File> from the Folder's data folder
-A Folder's data folder is in <datapath>/archive/<FolderPathHashed> or <datapath>/source/<FolderPathHashed>
-Inside this folder is the files.dat file, corresponding to the serialiezed vector<File>, and for archives
-git-like 00..ff subfolders containing each archived files under their hashed relative file paths.
-A Folder should create its data folder on construction.
+/// TODO:
+The server should somehow be able to keep the file/node databases in sync between multiple instances.
+E.g. if I have a server running and I do "node add" or "folder sync" from another instance,
+I want the server to keep a consistent state.
+And if the server does updates, I want it to save them on exit.
+=> Maybe just don't allow multiple instances in parallel. That's pretty much the only real always safe solution.

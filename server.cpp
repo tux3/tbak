@@ -13,6 +13,8 @@
 
 using namespace std;
 
+std::atomic<bool> Server::abortall{false};
+
 Server::Server(const std::string& configFilePath, NodeDB &ndb, FolderDB &fdb)
     : ndb{ndb}, fdb{fdb}
 {
@@ -76,6 +78,9 @@ int Server::exec()
 
     for (;;)
     {
+        if (abortall)
+            return 0;
+
         NetSock client = insock.accept();
         handleClient(client);
     }
@@ -102,6 +107,9 @@ void Server::handleClient(NetSock& client)
     {
         try
         {
+            if (abortall)
+                return;
+
             if (client.isShutdown())
             {
                 cout << "Client disconnected"<<endl;

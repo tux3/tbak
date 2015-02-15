@@ -3,19 +3,18 @@
 
 #include <string>
 #include <vector>
-#include <sodium.h>
 #include "node.h"
+#include "filelocker.h"
 
 /// Maintains a database of Nodes
 class NodeDB
 {
 public:
     NodeDB(const std::string& path);  ///< Reads serialized data from file
-    NodeDB(const std::vector<char> &data);
 
-    void load(const std::string& path);
+    void load();
     void deserialize(const std::vector<char>& data);
-    void save(const std::string& path) const;
+    void save() const;
     std::vector<char> serialize() const;
 
     const std::vector<Node>& getNodes() const;
@@ -24,6 +23,7 @@ public:
 
 private:
     std::vector<Node> nodes;
+    FileLocker file;
 };
 
 #endif // NODEDB_H

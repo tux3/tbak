@@ -7,26 +7,15 @@
 
 using namespace std;
 
-NodeDB::NodeDB(const string &uri)
+NodeDB::NodeDB(const string &path)
+    : file{path}
 {
-    load(uri);
+    load();
 }
 
-NodeDB::NodeDB(const vector<char> &data)
+void NodeDB::save() const
 {
-    if (!data.empty())
-        deserialize(data);
-}
-
-void NodeDB::save(const string &path) const
-{
-    vector<char> data = serialize();
-    ofstream f(path, ios_base::binary | ios_base::trunc);
-    if (f.is_open())
-    {
-        copy(begin(data), end(data), ostreambuf_iterator<char>(f));
-        f.close();
-    }
+    file.overwrite(serialize());
 }
 
 vector<char> NodeDB::serialize() const
@@ -42,15 +31,9 @@ vector<char> NodeDB::serialize() const
     return data;
 }
 
-void NodeDB::load(const std::string& path)
+void NodeDB::load()
 {
-    ifstream f(path, ios_base::binary);
-    vector<char> data((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
-    if (f.is_open())
-        f.close();
-
-    if (!data.empty())
-        deserialize(data);
+    deserialize(file.readAll());
 }
 
 void NodeDB::deserialize(const std::vector<char> &data)

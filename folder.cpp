@@ -20,7 +20,6 @@ Folder::Folder(const std::string& Path)
     rawSize = actualSize = 0;
 
     sha512str(path.c_str(), path.size(), hash);
-    createDirectory(dataPath()+"/source/"+hash);
 
     open();
 }
@@ -212,13 +211,26 @@ void Folder::open(bool forceupdate)
 
     if (data.empty())
     {
-        files.clear();
-        vector<string> filelist = listfiles(path.c_str(), 0);
-        for (auto& file : filelist)
-            files.push_back(File(file));
+        if (type == FolderType::Archive)
+        {
+            createDirectory(dataPath()+"/archive/"+hash);
+        }
+        else if (type == FolderType::Source)
+        {
+            createDirectory(dataPath()+"/source/"+hash);
+            files.clear();
+            vector<string> filelist = listfiles(path.c_str(), 0);
+            for (auto& file : filelist)
+                files.push_back(File(file));
+        }
     }
     else
     {
+        if (type == FolderType::Archive)
+            createDirectory(dataPath()+"/archive/"+hash);
+        else if (type == FolderType::Source)
+            createDirectory(dataPath()+"/source/"+hash);
+
         auto it = data.cbegin();
         vector<vector<char>> filesData = deserializeConsume<decltype(filesData)>(it);
         for (const vector<char>& vec : filesData)

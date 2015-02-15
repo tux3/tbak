@@ -46,11 +46,6 @@ void FolderDB::deserialize(const std::vector<char> &data)
         folders.push_back(Folder(vec));
 }
 
-std::vector<Folder>& FolderDB::getFolders()
-{
-    return folders;
-}
-
 const std::vector<Folder>& FolderDB::getFolders() const
 {
     return folders;
@@ -89,4 +84,23 @@ bool FolderDB::removeFolder(const std::string& path, bool archive)
         }
     }
     return false;
+}
+
+Folder* FolderDB::getFolder(const string &path)
+{
+    Folder* folder=nullptr;
+    for (size_t i=0; i<folders.size(); i++)
+    {
+        if (folders[i].getPath() == path)
+        {
+            folder = &folders[i];
+            break;
+        }
+    }
+    return folder;
+}
+
+Folder& FolderDB::getFolder(const std::vector<Folder>::const_iterator it)
+{
+    return *folders.erase(it, it); // Doesn't erase anything (empty range), but removes constness
 }

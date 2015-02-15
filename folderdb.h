@@ -21,11 +21,15 @@ public:
     void save() const;
     std::vector<char> serialize() const;
 
-    std::vector<Folder>& getFolders();
+    Folder* getFolder(const std::string& path);
+    Folder& getFolder(const std::vector<Folder>::const_iterator it);
     const std::vector<Folder>& getFolders() const;
     void addFolder(const Folder& folder);
     void addFolder(const std::string& path);
     bool removeFolder(const std::string& path, bool archive=true);
+
+private:
+    //std::vector<Folder>& getFolders();
 
 private:
     std::vector<Folder> folders;

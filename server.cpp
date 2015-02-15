@@ -193,7 +193,7 @@ void Server::handleClient(NetSock& client)
                     auto pit = packet.data.cbegin();
                     string path = ::deserializeConsume<string>(pit);
                     std::cout<<"Folder reload requested for "<<path<<endl;
-                    vector<Folder>& folders = fdb.getFolders();
+                    const vector<Folder>& folders = fdb.getFolders();
                     auto fit = find_if(begin(folders), end(folders), [&path](const Folder& f)
                     {
                         return f.getPath()==path && f.getType() == FolderType::Source;
@@ -205,7 +205,7 @@ void Server::handleClient(NetSock& client)
                     }
                     else
                     {
-                        Folder& folder = *fit;
+                        Folder& folder = fdb.getFolder(fit);
                         folder.open(true);
                         folder.close();
                         client.send({NetPacketType::FolderSourceReload});
@@ -216,7 +216,7 @@ void Server::handleClient(NetSock& client)
                     auto pit = packet.data.cbegin();
                     string path = ::deserializeConsume<string>(pit);
                     std::cout<<"Folder time list requested for "<<path<<endl;
-                    vector<Folder>& folders = fdb.getFolders();
+                    const vector<Folder>& folders = fdb.getFolders();
                     auto fit = find_if(begin(folders), end(folders), [&path](const Folder& f){return f.getPath()==path;});
                     if (fit == end(folders))
                     {
@@ -226,13 +226,14 @@ void Server::handleClient(NetSock& client)
                     else
                     {
                         vector<char> data;
-                        fit->open(true);
-                        for (const File& file : fit->getFiles())
+                        Folder& folder = fdb.getFolder(fit);
+                        folder.open(true);
+                        for (const File& file : folder.getFiles())
                         {
                             ::serializeAppend(data, file.path);
                             ::serializeAppend(data, file.attrs.mtime);
                         }
-                        fit->close();
+                        folder.close();
                         data = Compression::deflate(data);
                         NetPacket packet{NetPacketType::FolderTimeList, data};
                         Crypto::encryptPacket(packet, *this, remoteKey);
@@ -247,7 +248,7 @@ void Server::handleClient(NetSock& client)
                     cout << "Download archive file request: "<<folderpath<<", "<<filepath<<endl;
 
                     // Find folder
-                    vector<Folder>& folders = fdb.getFolders();
+                    const vector<Folder>& folders = fdb.getFolders();
                     auto fit = find_if(begin(folders), end(folders), [&folderpath](const Folder& f){return f.getPath()==folderpath;});
                     if (fit == end(folders))
                     {
@@ -256,7 +257,7 @@ void Server::handleClient(NetSock& client)
                     }
 
                     // Find file
-                    Folder& folder = *fit;
+                    Folder& folder = fdb.getFolder(fit);
                     folder.open();
                     const std::vector<File>& files = folder.getFiles();
                     folder.close();
@@ -308,7 +309,7 @@ void Server::handleClient(NetSock& client)
                     string folderpath = ::deserializeConsume<string>(pit);
 
                     // Find folder
-                    vector<Folder>& folders = fdb.getFolders();
+                    const vector<Folder>& folders = fdb.getFolders();
                     auto fit = find_if(begin(folders), end(folders), [&folderpath](const Folder& f)
                     {
                         return f.getPath()==folderpath && f.getType() == FolderType::Archive;
@@ -323,7 +324,7 @@ void Server::handleClient(NetSock& client)
                     auto it = data.cbegin();
                     File fmeta(&*fit, it);
                     cout << "Upload archive file request in "<<folderpath<<" of "<<fmeta.path<<endl;
-                    fit->writeArchiveFile(data, *this, remoteKey);
+                    fdb.getFolder(fit).writeArchiveFile(data, *this, remoteKey);
                     client.send({NetPacketType::UploadArchiveFile});
                 }
                 else

@@ -167,18 +167,13 @@ int main(int argc, char* argv[])
                 return -1;
             string folderpath{Folder::normalizePath(argv[3])};
 
-            Folder* lfolder=nullptr;
-            for (Folder& f : fdb.getFolders())
+            Folder* lfolder=fdb.getFolder(folderpath);
+            if (lfolder)
             {
-                if (f.getPath() == folderpath)
-                {
-                    lfolder = &f;
-                    f.open(true);
-                    f.close();
-                    break;
-                }
+                lfolder->open(true);
+                lfolder->close();
             }
-            if (!lfolder)
+            else
             {
                 cout <<"Folder not found"<<endl;
                 return -1;
@@ -213,14 +208,9 @@ int main(int argc, char* argv[])
                 return -1;
             string folderpath{Folder::normalizePath(argv[3])};
 
-            for (Folder& folder : fdb.getFolders())
-            {
-                if (folder.getPath() == folderpath)
-                {
-                    folder.open(true);
-                    folder.close();
-                }
-            }
+            Folder* f = fdb.getFolder(folderpath);
+            f->open(true);
+            f->close();
         }
         else if (subcommand == "status")
         {
@@ -267,27 +257,23 @@ int main(int argc, char* argv[])
                 bool operator<(const entry& other){return path<other.path;}
             };
             vector<entry> lEntries;
-            Folder* lfolder=nullptr;
-            for (Folder& f : fdb.getFolders())
+
+            Folder* lfolder=fdb.getFolder(folderpath);
+            if (lfolder)
             {
-                if (f.getPath() == folderpath)
+                lfolder->open(true);
+                for (const File& file : lfolder->getFiles())
                 {
-                    lfolder = &f;
-                    f.open(true);
-                    for (const File& file : f.getFiles())
-                    {
-                        entry e;
-                        e.path = file.path;
-                        e.mtime = file.attrs.mtime;
-                        lEntries.push_back(e);
-                    }
-                    f.close();
-                    break;
+                    entry e;
+                    e.path = file.path;
+                    e.mtime = file.attrs.mtime;
+                    lEntries.push_back(e);
                 }
+                lfolder->close();
             }
-            if (!lfolder)
+            else
             {
-                cerr << "Folder not found"<<endl;
+                cout <<"Folder not found"<<endl;
                 return -1;
             }
 
@@ -489,29 +475,26 @@ int main(int argc, char* argv[])
                 bool operator<(const entry& other){return path<other.path;}
             };
             vector<entry> lEntries;
-            Folder* lfolder=nullptr;
-            for (Folder& f : fdb.getFolders())
+            Folder* lfolder=fdb.getFolder(folderpath);
+            if (lfolder && lfolder->getType() == FolderType::Source)
             {
-                if (f.getPath() == folderpath && f.getType() == FolderType::Source)
+                lfolder->open(true);
+                for (const File& file : lfolder->getFiles())
                 {
-                    lfolder = &f;
-                    f.open(true);
-                    for (const File& file : f.getFiles())
-                    {
-                        entry e;
-                        e.path = file.path;
-                        e.mtime = file.attrs.mtime;
-                        lEntries.push_back(e);
-                    }
-                    f.close();
-                    break;
+                    entry e;
+                    e.path = file.path;
+                    e.mtime = file.attrs.mtime;
+                    lEntries.push_back(e);
                 }
+                lfolder->close();
             }
-            if (!lfolder)
+            else
             {
                 cerr << "Local source folder to restore not found"<<endl;
                 return -1;
             }
+
+
 
             Server server(serverConfigPath(), ndb, fdb);
             const vector<Node>& nodes = ndb.getNodes();

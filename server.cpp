@@ -291,6 +291,28 @@ void Server::handleClient(NetSock& client)
                     Crypto::encryptPacket(reply, *this, remoteKey);
                     client.send(reply);
                 }
+                else if (packet.type == NetPacketType::UploadArchiveFile)
+                {
+                    auto pit = packet.data.cbegin();
+                    string folderpath = ::deserializeConsume<string>(pit);
+                    cout << "Upload archive file request in "<<folderpath<<endl;
+
+                    // Find folder
+                    vector<Folder>& folders = fdb.getFolders();
+                    auto fit = find_if(begin(folders), end(folders), [&folderpath](const Folder& f)
+                    {
+                        return f.getPath()==folderpath && f.getType() == FolderType::Archive;
+                    });
+                    if (fit == end(folders))
+                    {
+                        client.send({NetPacketType::Abort});
+                        break;
+                    }
+
+                    vector<char> data(pit, packet.data.cend());
+                    fit->writeArchiveFile(data, *this, remoteKey);
+                    client.send({NetPacketType::UploadArchiveFile});
+                }
                 else
                 {
                     cerr << "Unknown packet of type "<<(int)packet.type<<" with size "<<packet.data.size()<<" received"<<endl;

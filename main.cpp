@@ -5,6 +5,7 @@
 #include <memory>
 #include <algorithm>
 #include <thread>
+#include <cassert>
 #include "nodedb.h"
 #include "folderdb.h"
 #include "settings.h"
@@ -380,6 +381,52 @@ int main(int argc, char* argv[])
                             return it->mtime < le.mtime;
                     });
                     cout << "Need to upload "<<diff.size()<<" files"<<endl;
+                    vector<char> folderPathData = ::serialize(folderpath);
+                    for (entry e : diff)
+                    {
+                        cout << "Uploading "<<e.path<<"...\n";
+
+                        // Find file
+                        const std::vector<File>& files = lfolder->getFiles();
+                        bool found = false;
+                        const File* file = nullptr;
+                        for (const File& f : files)
+                        {
+                            if (f.path == e.path)
+                            {
+                                file = &f;
+                                found = true;
+                                break;
+                            }
+                        }
+                        assert(found);
+                        vector<char> fdata = ::serialize(lfolder->getPath());
+
+                        // Compress and encrypt
+                        {
+                            File archived = *file;
+                            vector<char> content = file->readAll();
+                            content = Compression::deflate(content);
+                            Crypto::encrypt(content, server, node.getPk());
+                            archived.actualSize = archived.metadataSize() + content.size();
+                            vectorAppend(fdata, archived.serialize());
+                            copy(move_iterator<vector<char>::iterator>(begin(content)),
+                                 move_iterator<vector<char>::iterator>(end(content)),
+                                 back_inserter(fdata));
+                        }
+
+                        // Send result
+                        NetPacket request{NetPacketType::UploadArchiveFile, fdata};
+                        Crypto::encryptPacket(request, server, node.getPk());
+                        sock.send(request);
+                        NetPacket reply = sock.recvPacket();
+                        Crypto::decryptPacket(reply, server, node.getPk());
+                        if (reply.type != NetPacketType::UploadArchiveFile)
+                        {
+                            cout << "Upload failed\n";
+                            continue;
+                        }
+                    }
                 }
             }
         }

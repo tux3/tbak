@@ -297,8 +297,8 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
     auto it = data.cbegin();
     File fmeta(this, it);
     size_t metasize = fmeta.metadataSize();
-    //cout << "fmeta has "<<fmeta.rawSize<<" raw bytes, "<<fmeta.actualSize<<" actual bytes, "<<metasize<< " meta bytes and "
-    //     <<data.size()-metasize<<" data bytes"<<endl;
+    cout << "fmeta has "<<fmeta.rawSize<<" raw bytes, "<<fmeta.actualSize<<" actual bytes, "<<metasize<< " meta bytes and "
+         <<data.size()-metasize<<" data bytes"<<endl;
 
     assert(data.size() == fmeta.actualSize);
 
@@ -311,7 +311,7 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
 
         string hashfilePath = hashdirPath+"/"+newhash.substr(2);
         FileLocker filel(hashfilePath);
-        filel.overwrite(data.data()+metasize, fmeta.rawSize);
+        filel.overwrite(data.data()+metasize, data.size()-metasize);
     }
     else if (type == FolderType::Source)
     {
@@ -325,8 +325,18 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
         filel.overwrite(rawdata.data(), rawdata.size());
     }
 
-    /// TODO: Update records
-    files.push_back(fmeta);
+    bool found = false;
+    for (File& file : files)
+    {
+        if (file.path == fmeta.path)
+        {
+            found=true;
+            file = fmeta;
+            break;
+        }
+    }
+    if (!found)
+        files.push_back(fmeta);
     close();
 }
 

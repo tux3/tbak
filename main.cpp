@@ -166,6 +166,24 @@ int main(int argc, char* argv[])
             if (argc < 4)
                 return -1;
             string folderpath{Folder::normalizePath(argv[3])};
+
+            Folder* lfolder=nullptr;
+            for (Folder& f : fdb.getFolders())
+            {
+                if (f.getPath() == folderpath)
+                {
+                    lfolder = &f;
+                    f.open(true);
+                    f.close();
+                    break;
+                }
+            }
+            if (!lfolder)
+            {
+                cout <<"Folder not found"<<endl;
+                return -1;
+            }
+
             const vector<Node>& nodes = ndb.getNodes();
             for (const Node& node : nodes)
             {
@@ -177,7 +195,7 @@ int main(int argc, char* argv[])
                     continue;
                 }
 
-                NetPacket request{NetPacketType::FolderPush, ::serialize(folderpath)};
+                NetPacket request{NetPacketType::FolderPush, lfolder->serialize()};
                 Crypto::encryptPacket(request, server, node.getPk());
                 sock.send(request);
                 NetPacket reply = sock.recvPacket();

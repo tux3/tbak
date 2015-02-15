@@ -177,6 +177,17 @@ void Server::handleClient(NetSock& client)
                         client.send(packet);
                     }
                 }
+                else if (packet.type == NetPacketType::FolderPush)
+                {
+                    Folder f(packet.data);
+                    std::cout<<"Folder push requested for "<<f.getPath()<<endl;
+
+                    f.setType(FolderType::Archive);
+                    f.open(true);
+                    f.close();
+                    fdb.addFolder(f);
+                    client.send({NetPacketType::FolderPush});
+                }
                 else if (packet.type == NetPacketType::FolderSourceReload)
                 {
                     auto pit = packet.data.cbegin();

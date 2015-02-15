@@ -1,0 +1,58 @@
+Protocol
+
+There are two types of requests, authenticated and unauthenticated.
+Authenticated requests can only be made to nodes that accepted your node, and are encrypted.
+Unauthenticated requests can be made to any node and do not use encryption.
+Every node has a keypair they use to secure every authenticated exchange.
+
+Generally, it is the client's job to remember most of the state during complex operations.
+The server should be mostly stateless, except for the status of authentication.
+
+A source folder is the reference data of a backup. An archive folder is a copy of a source.
+The protocol does not allow a node to modify a source folder, only to read it,
+but the protocol allows to read and write to an archive folder.
+A node accepting another node grants the accepted node full control over this node's archives through the protocol,
+as well as read-only access to its source folders.
+
+All archives folder must be stored in <datapath>/archives/<sourcFolderPathHashed>
+This folder contains subfolder 00..ff like a Git index would have.
+
+# Authentication
+To authenticate, send an Auth packet with your public key as data to a node while not already authenticated.
+The node will reply with an empty Auth packet if successful, or with an Abort otherwise
+
+# Syncing
+TODO: Syncing should be per-folder. Change "sync" to "folder sync <folder>".
+The Sync request is authenticated, it asks the remote node to perform a sync of the given folder with all other nodes.
+Since we can't just lock the filesystem, changes may happen in the middle of syncing a source with an archive
+or two archives together. Thus, we need a syncing protocol that can cope with that.
+To sync a local folder with a remote folder, the local client creates a list of local files, and asks the remote
+to do the same. The client then compares the two and builds a diff.
+The client then downloads every file that changed from the remote.
+If the remote is unable to send a file because e.g. it was deleted or changed in the meantime, it sends an Abort.
+The client ignores any Abort that happens while downloading a file.
+After trying to download all the files in the diff once, the client generates another diff.
+If that new diff is empty, the client stops syncing with this remote.
+Otherwise, the client tries to download every file in the new diff again, until the diff becomes empty.
+If the client receives an Abort while generating the diff (not while downloading a file), it stops syncing.
+We must have a lastSyncedTime field on every file. The folder's lastSyncedTime becomes the oldest of the files.
+When building a diff, we download a file if the remote's version is newer, and upload it if ours is newer,
+so that after transfer the two files have the same lastSyncedTime.
+When a node downloads or uploads a file, it must lock this file. Any request to read/write a locked file must fail.
+
+/// TODO
+Encryption shouldn't be handled at the socket level, but by the client/server.
+There should be a packet to authenticate, and a server should maintain a flag after authentication.
+Any unauthenticated request that should have been will be replied to with an abort.
+This implies again that the socket or packets should not decrypt themselves.
+The server will do the decryption iff auth was successfull.
+This greatly reduces the attack surface, your packets will just be ignored if you don't auth first or use only unauthed requests.
+
+/// TODO
+The Folder class shouldn't store it's std::vector<File> in its normal serialized data
+That would make the FolderDB really huge and slow down everything, we don't want that.
+Instead, the Folder should have open/close operations that load/unload the vector<File> from the Folder's data folder
+A Folder's data folder is in <datapath>/archive/<FolderPathHashed> or <datapath>/source/<FolderPathHashed>
+Inside this folder is the files.dat file, corresponding to the serialiezed vector<File>, and for archives
+git-like 00..ff subfolders containing each archived files under their hashed relative file paths.
+A Folder should create its data folder on construction.

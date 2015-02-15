@@ -377,11 +377,12 @@ void Folder::createPathTo(const std::string& relfile)
     size_t lastpos = 0;
     for (;;)
     {
+        lastpos++;
         lastpos = relfile.find('/', lastpos);
         if (lastpos == string::npos)
             break;
 
-        cout << "Need to create "<<relfile.substr(0, lastpos)<<endl;
-        /// TODO: Actually create
+        string next = relfile.substr(0, lastpos);
+        createDirectory(path+"/"+next);
     }
 }

@@ -52,7 +52,8 @@ private:
     void updateSizes(); ///< Re-computes rawSize and actualSize
     void createDirectory(const char* path); ///< Create a physical directory on disk
     void createDirectory(const std::string& path); ///< Create a physical directory on disk
-    void createPathTo(const std::string& relfile); ///< Create the necessary directories to a file in this folder
+public:    void createPathTo(const std::string& relfile); ///< Create the necessary directories to a file in this folder
+/// TODO: Un-publicify ^
 
 private:
     FolderType type; ///< Type (source/archive) of the folder

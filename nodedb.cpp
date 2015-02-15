@@ -38,6 +38,8 @@ void NodeDB::load()
 
 void NodeDB::deserialize(const std::vector<char> &data)
 {
+    if (data.empty())
+        return;
     auto it = begin(data);
 
     vector<vector<char>> nodesData = deserializeConsume<decltype(nodesData)>(it);

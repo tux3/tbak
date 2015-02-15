@@ -37,6 +37,8 @@ void FolderDB::load()
 
 void FolderDB::deserialize(const std::vector<char> &data)
 {
+    if (data.empty())
+        return;
     auto it = begin(data);
 
     vector<vector<char>> foldersData = deserializeConsume<decltype(foldersData)>(it);

@@ -10,7 +10,7 @@ using namespace std;
 
 FileLocker::FileLocker(const string &path)
 {
-    fd = open(path.c_str(), O_RDWR | O_CREAT);
+    fd = open(path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP);
     if (fd < 0)
         throw runtime_error("FileLocker::FileLocker: Unabled to open "+path);
 
@@ -36,21 +36,24 @@ std::vector<char> FileLocker::readAll() const
     return data;
 }
 
-void FileLocker::truncate() const
+bool FileLocker::truncate() const noexcept
 {
     lock_guard<std::mutex> lock(mutex);
-    ftruncate(fd, 0);
+    lseek(fd, 0, SEEK_SET);
+    return ftruncate(fd, 0) == 0;
 }
 
-void FileLocker::write(const std::vector<char>& data) const
+bool FileLocker::write(const std::vector<char>& data) const noexcept
 {
     lock_guard<std::mutex> lock(mutex);
-    ::write(fd, data.data(), data.size());
+    auto result = ::write(fd, data.data(), data.size());
+    return (result>0 && (size_t)result == data.size());
 }
 
-void FileLocker::overwrite(const std::vector<char>& data) const
+bool FileLocker::overwrite(const std::vector<char>& data) const noexcept
 {
     lock_guard<std::mutex> lock(mutex);
-    truncate();
-    write(data);
+    if (!truncate())
+        return false;
+    return write(data);
 }

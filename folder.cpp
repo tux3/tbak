@@ -302,8 +302,8 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
     auto it = data.cbegin();
     File fmeta(this, it);
     size_t metasize = fmeta.metadataSize();
-    cout << "fmeta has "<<fmeta.rawSize<<" raw bytes, "<<fmeta.actualSize<<" actual bytes, "<<metasize<< " meta bytes and "
-         <<data.size()-metasize<<" data bytes"<<endl;
+    //cout << "fmeta has "<<fmeta.rawSize<<" raw bytes, "<<fmeta.actualSize<<" actual bytes, "<<metasize<< " meta bytes and "
+    //     <<data.size()-metasize<<" data bytes"<<endl;
 
     assert(data.size() == fmeta.actualSize);
 

@@ -116,16 +116,14 @@ std::vector<char> File::readAll() const
     }
     else if (parent->getType() == FolderType::Archive)
     {
-        string slash = "/";
         string newhash;
         sha512str(path.c_str(), path.size(), newhash);
         fullpath = parent->getFolderDataPath()+"/"+newhash.substr(0,2)+"/"+newhash.substr(2);
-        cout << fullpath<<endl;
     }
     else
         throw std::runtime_error("File::readAll: Unknown parent folder type");
 
-    int fd = open(fullpath.c_str(), O_RDWR);
+    int fd = open(fullpath.c_str(), O_RDONLY);
     if (fd < 0)
         throw runtime_error("File::readAll: Unabled to open "+fullpath);
 

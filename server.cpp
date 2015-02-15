@@ -275,6 +275,11 @@ void Server::handleClient(NetSock& client)
                 }
             }
         }
+        catch (runtime_error e)
+        {
+            cout << "Server::handleClient: Caught exception ("<<e.what()<<"), returning"<<endl;
+            break;
+        }
         catch (...)
         {
             cout << "Server::handleClient: Caught exception, returning"<<endl;

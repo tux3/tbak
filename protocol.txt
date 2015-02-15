@@ -22,7 +22,6 @@ To authenticate, send an Auth packet with your public key as data to a node whil
 The node will reply with an empty Auth packet if successful, or with an Abort otherwise
 
 # Syncing
-TODO: Syncing should be per-folder. Change "sync" to "folder sync <folder>".
 The Sync request is authenticated, it asks the remote node to perform a sync of the given folder with all other nodes.
 Since we can't just lock the filesystem, changes may happen in the middle of syncing a source with an archive
 or two archives together. Thus, we need a syncing protocol that can cope with that.
@@ -48,10 +47,21 @@ The client sends the name of the folder and file to fetch, the server replies wi
 The actualSize field in the File metadata tells the client that it needs to deserialize actualSize-sizeof(File) bytes of content,
 if the packet data size isn't equal to actualSize, the client should reject the packet.
 
-/// TODO: Reload folder
-Ask the node to reload its folder (open(true)/close()))
-We can't reload every time the client make a requests, that would destroy the disk.
-But once before every sync should be good.
-
 /// TODO: Upload files
 We can download, but upload would be nice too.
+
+/// TODO: folder push
+Use the "folder push" command to ask all nodes that accepted us to do a "folder add-archive" on this folder.
+The next time this folder is sync'd, the folder will be transfered to the nodes
+
+/// TODO: Threading. Handle each client separately.
+
+/// TODO: Faster exit after handling of a signal. Close all client sockets and get out now.
+This implies making Server a real singleton, which it already is de-facto.
+
+/// TODO: Change ndb/fdb to find their own path via settings, not ctor
+
+/// TODO: Change Server to find its own path via the settings, not via contructor.
+Maybe also give it ownership of ndb/fdb, and make it create them ?
+
+

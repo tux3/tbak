@@ -272,6 +272,17 @@ int main(int argc, char* argv[])
                     rfolder = move(unique_ptr<Folder>(new Folder{reply.data}));
                 }
 
+                // Send a FolderSourceReload if needed
+                if (rfolder->getType() == FolderType::Source)
+                {
+                    NetPacket request{NetPacketType::FolderSourceReload, ::serialize(folderpath)};
+                    Crypto::encryptPacket(request, server, node.getPk());
+                    sock.send(request);
+                    NetPacket reply = sock.recvPacket();
+                    if (reply.type != NetPacketType::FolderSourceReload)
+                        cout<<"Remote node couldn't reload from source, continuing anyway..."<<endl;
+                }
+
                 // Get list of files and their last access times
                 NetPacket request{NetPacketType::FolderTimeList, ::serialize(folderpath)};
                 Crypto::encryptPacket(request, server, node.getPk());

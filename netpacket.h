@@ -13,6 +13,7 @@ enum class NetPacketType : uint8_t
     Auth, ///< Perform authentication, necessary to use authenticated packets
 
     // Authenticated packets
+    FolderSourceReload, ///< Ask the server to reload a source folder from disk
     FolderStats, ///< Request/send a folder's main statistics
     FolderTimeList, ///< List of file names and last acess time of this folder's files
     DownloadArchiveFile, ///< Fetch file compressed then encrypted-with-source-key from source or archive folder

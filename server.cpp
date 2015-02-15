@@ -177,6 +177,29 @@ void Server::handleClient(NetSock& client)
                         client.send(packet);
                     }
                 }
+                else if (packet.type == NetPacketType::FolderSourceReload)
+                {
+                    auto pit = packet.data.cbegin();
+                    string path = ::deserializeConsume<string>(pit);
+                    std::cout<<"Folder reload requested for "<<path<<endl;
+                    vector<Folder>& folders = fdb.getFolders();
+                    auto fit = find_if(begin(folders), end(folders), [&path](const Folder& f)
+                    {
+                        return f.getPath()==path && f.getType() == FolderType::Source;
+                    });
+                    if (fit == end(folders))
+                    {
+                        client.send({NetPacketType::Abort});
+                        break;
+                    }
+                    else
+                    {
+                        Folder& folder = *fit;
+                        folder.open(true);
+                        folder.close();
+                        client.send({NetPacketType::FolderSourceReload});
+                    }
+                }
                 else if (packet.type == NetPacketType::FolderTimeList)
                 {
                     auto pit = packet.data.cbegin();

@@ -47,9 +47,6 @@ The client sends the name of the folder and file to fetch, the server replies wi
 The actualSize field in the File metadata tells the client that it needs to deserialize actualSize-sizeof(File) bytes of content,
 if the packet data size isn't equal to actualSize, the client should reject the packet.
 
-/// TODO: Upload files
-We can download, but upload would be nice too.
-
 /// TODO: folder push
 Use the "folder push" command to ask all nodes that accepted us to do a "folder add-archive" on this folder.
 The next time this folder is sync'd, the folder will be transfered to the nodes

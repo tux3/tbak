@@ -29,6 +29,7 @@ void printHelp()
             "folder add-archive : Start tracking a remote folder\n"
             "folder remove-source : Stop tracking a source folder\n"
             "folder remove-archive : Stop tracking an archive folder\n"
+            "folder push : Ask other nodes to track this folder\n"
             "folder update : Update the files database manually\n"
             "folder sync : Update and synchronize this folder with other nodes\n"
             "folder restore : Overwrite this source folder with the node's archives\n"
@@ -160,6 +161,34 @@ int main(int argc, char* argv[])
                 break;
             }
         }
+        else if (subcommand == "push")
+        {
+            if (argc < 4)
+                return -1;
+            string folderpath{Folder::normalizePath(argv[3])};
+            const vector<Node>& nodes = ndb.getNodes();
+            for (const Node& node : nodes)
+            {
+                Server server(serverConfigPath(), ndb, fdb);
+                NetSock sock(NetAddr{node.getUri()});
+                if (!Net::sendAuth(sock, server))
+                {
+                    cout << "Couldn't authenticate with node "<<node.getUri()<<endl;
+                    continue;
+                }
+
+                NetPacket request{NetPacketType::FolderPush, ::serialize(folderpath)};
+                Crypto::encryptPacket(request, server, node.getPk());
+                sock.send(request);
+                NetPacket reply = sock.recvPacket();
+                Crypto::decryptPacket(reply, server, node.getPk());
+                if (reply.type != NetPacketType::FolderPush)
+                {
+                    cout << "Couldn't push the folder to node "<<node.getUri()<<endl;
+                    continue;
+                }
+            }
+        }
         else if (subcommand == "update")
         {
             if (argc < 4)
@@ -188,8 +217,8 @@ int main(int argc, char* argv[])
                 NetSock sock(NetAddr{node.getUri()});
                 if (!Net::sendAuth(sock, server))
                 {
-                    cerr << "Couldn't authenticate with that node"<<endl;
-                    return -1;
+                    cout << "Couldn't authenticate with that node"<<endl;
+                    continue;
                 }
 
                 NetPacket request{NetPacketType::FolderStats, ::serialize(folderpath)};

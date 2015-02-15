@@ -26,10 +26,13 @@ class File
 public:
     File(const Folder* parent, const std::string& path); ///< Construct from a real source file
     File(const Folder* parent, const std::vector<char>& data); ///< Construct from serialized data
+    File(const Folder* parent, std::vector<char>::const_iterator& data); ///< Construct from serialized data
 
     std::vector<char> serialize() const;
     void deserialize(const std::vector<char>& data);
+    void deserialize(std::vector<char>::const_iterator& data);
     std::vector<char> readAll() const;
+    size_t metadataSize(); ///< Get the size of the serialized metadata. Slow.
 
 private:
     void readAttributes(); ///< Assumes path is valid

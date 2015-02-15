@@ -18,11 +18,17 @@ File::File(const Folder *parent, const std::string& Path)
       crc32{0}, attrs{0,0,0,0}
 {
     path = Path;
-    readAttributes();
     computeCRC();
+    readAttributes();
 }
 
 File::File(const Folder *parent, const std::vector<char>& data)
+    : parent{parent}
+{
+    deserialize(data);
+}
+
+File::File(const Folder* parent, std::vector<char>::const_iterator& data)
     : parent{parent}
 {
     deserialize(data);
@@ -37,12 +43,12 @@ void File::readAttributes()
         return;
     }
 
-    rawSize = actualSize = buf.st_size;
-    actualSize += sizeof(File);
     attrs.mtime = (uint64_t)buf.st_mtim.tv_sec;
     attrs.userId = buf.st_uid;
     attrs.groupId = buf.st_gid;
     attrs.mode = buf.st_mode;
+    rawSize = actualSize = buf.st_size;
+    actualSize += metadataSize();
 }
 
 void File::computeCRC()
@@ -82,6 +88,11 @@ vector<char> File::serialize() const
 void File::deserialize(const std::vector<char>& data)
 {
     auto it = begin(data);
+    deserialize(it);
+}
+
+void File::deserialize(std::vector<char>::const_iterator& it)
+{
     path = deserializeConsume<decltype(path)>(it);
     rawSize = deserializeConsume<decltype(rawSize)>(it);
     actualSize = deserializeConsume<decltype(actualSize)>(it);
@@ -109,4 +120,9 @@ std::vector<char> File::readAll() const
 
     close(fd);
     return data;
+}
+
+size_t File::metadataSize()
+{
+    return serialize().size();
 }

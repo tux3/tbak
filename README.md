@@ -24,3 +24,12 @@ tbak folder sync /some/folder/somewhere
 ```
 
 Then you would just run <code>tbak folder sync /some/folder/somewhere</code> any time you want to synchronise your folder with other nodes, this can for example be done as a cron job.
+
+### Compiling
+
+This code is not portable C++, it was written for Linux and uses several advanced non-portable features not available in standard C++ like directories and sockets...
+
+Two libraries are used, zlib for compression and libsodium for encryption.
+There is no Makefile, but a Qt .pro file is provived.<br/>
+Compiling is done with <code>qmake && make</code>.<br/>
+Or, simply passing all source files to g++ while linking <code>-lsodium -lz</code>

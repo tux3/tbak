@@ -22,7 +22,7 @@ void randombytes(char buffer[], unsigned long long size)
         close(fd);
 }
 
-int encrypt(char encrypted[], const uint8_t pk[], const uint8_t sk[], const char nonce[], const char plain[], int length)
+int rawencrypt(char encrypted[], const uint8_t pk[], const uint8_t sk[], const char nonce[], const char plain[], int length)
 {
     uint8_t* temp_encrypted = new uint8_t[length+crypto_box_ZEROBYTES];
     uint8_t* temp_plain = new uint8_t[length+crypto_box_ZEROBYTES];
@@ -41,7 +41,7 @@ int encrypt(char encrypted[], const uint8_t pk[], const uint8_t sk[], const char
     return length;
 }
 
-int decrypt(char plain[], const uint8_t pk[], const uint8_t sk[], const char nonce[], const char encrypted[], int length)
+int rawdecrypt(char plain[], const uint8_t pk[], const uint8_t sk[], const char nonce[], const char encrypted[], int length)
 {
     uint8_t* temp_encrypted = new uint8_t[length+crypto_box_ZEROBYTES];
     uint8_t* temp_plain = new uint8_t[length+crypto_box_ZEROBYTES];
@@ -80,6 +80,18 @@ std::string Crypto::keyToString(PublicKey key)
     return output;
 }
 
+void Crypto::encryptPacket(NetPacket& packet, const Server &s, const PublicKey& remoteKey)
+{
+    if (!packet.data.size())
+        return;
+    size_t encryptedsize = packet.data.size()+crypto_box_NONCEBYTES+crypto_box_BOXZEROBYTES;
+    std::vector<char> encrypted(encryptedsize);
+    randombytes(&encrypted[0], crypto_box_NONCEBYTES);
+    rawencrypt(&encrypted[crypto_box_NONCEBYTES], &remoteKey[0], &s.getSecretKey()[0], &encrypted[0],
+            &packet.data[0], packet.data.size());
+    packet.data = encrypted;
+}
+
 void Crypto::decryptPacket(NetPacket& packet, const Server &s, const PublicKey& remoteKey)
 {
     if (!packet.data.size())
@@ -89,19 +101,33 @@ void Crypto::decryptPacket(NetPacket& packet, const Server &s, const PublicKey& 
     size_t plainsize = packet.data.size()-crypto_box_NONCEBYTES;
     std::vector<char> plaintext(plainsize);
     char* nonce = &packet.data[0], *encrypted=&packet.data[0]+crypto_box_NONCEBYTES;
-    decrypt(&plaintext[0], &remoteKey[0], &s.getSecretKey()[0], nonce, encrypted, plainsize);
+    rawdecrypt(&plaintext[0], &remoteKey[0], &s.getSecretKey()[0], nonce, encrypted, plainsize);
     plaintext.resize(plainsize-crypto_box_BOXZEROBYTES);
     packet.data = plaintext;
 }
 
-void Crypto::encryptPacket(NetPacket& packet, const Server &s, const PublicKey& remoteKey)
+void Crypto::encrypt(std::vector<char>& data, const Server& s, const PublicKey &remoteKey)
 {
-    if (!packet.data.size())
+    if (!data.size())
         return;
-    size_t encryptedsize = packet.data.size()+crypto_box_NONCEBYTES+crypto_box_BOXZEROBYTES;
+    size_t encryptedsize = data.size()+crypto_box_NONCEBYTES+crypto_box_BOXZEROBYTES;
     std::vector<char> encrypted(encryptedsize);
     randombytes(&encrypted[0], crypto_box_NONCEBYTES);
-    encrypt(&encrypted[crypto_box_NONCEBYTES], &remoteKey[0], &s.getSecretKey()[0], &encrypted[0],
-            &packet.data[0], packet.data.size());
-    packet.data = encrypted;
+    rawencrypt(&encrypted[crypto_box_NONCEBYTES], &remoteKey[0], &s.getSecretKey()[0], &encrypted[0],
+            &data[0], data.size());
+    data = encrypted;
+}
+
+void Crypto::decrypt(std::vector<char> &data, const Server& s, const PublicKey &remoteKey)
+{
+    if (!data.size())
+            return;
+    else if (data.size() < crypto_box_NONCEBYTES)
+        throw std::runtime_error("Crypto::decryptPacket: Packet doesn't have a nonce, can't decrypt");
+    size_t plainsize = data.size()-crypto_box_NONCEBYTES;
+    std::vector<char> plaintext(plainsize);
+    char* nonce = &data[0], *encrypted=&data[0]+crypto_box_NONCEBYTES;
+    rawdecrypt(&plaintext[0], &remoteKey[0], &s.getSecretKey()[0], nonce, encrypted, plainsize);
+    plaintext.resize(plainsize-crypto_box_BOXZEROBYTES);
+    data = plaintext;
 }

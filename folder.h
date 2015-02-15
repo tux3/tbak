@@ -34,6 +34,8 @@ public:
 
     static std::string normalizePath(const std::string& folder);
     static std::string normalizeFileName(const std::string& folder, const std::string& file);
+    std::string getFilesDbPath() const; ///< Returns the path of the Files database for this Folder
+    std::string getFolderDataPath() const; ///< Returns the path of the data folder, containing the files db
 
     void open(bool forceupdate=false); ///< Opens and reads the Files database from disk
     void close(); ///< Closes the Files database
@@ -46,7 +48,6 @@ private:
     void updateSizes(); ///< Re-computes rawSize and actualSize
     void createDirectory(const char* path); ///< Create a physical directory on disk
     void createDirectory(const std::string& path); ///< Create a physical directory on disk
-    std::string getFilesDbPath(); ///< Returns the path of the Files database for this Folder
 
 private:
     FolderType type; ///< Type (source/archive) of the folder

@@ -243,12 +243,20 @@ void Server::handleClient(NetSock& client)
                         break;
                     }
                     vector<char> fdata = file->serialize();
-                    vectorAppend(fdata, file->readAll());
 
                     // Compress and encrypt if needed
                     if (folder.getType() == FolderType::Source)
                     {
-                        /// TODO: this
+                        vector<char> content = file->readAll();
+                        content = Compression::deflate(content);
+                        Crypto::encrypt(content, *this, remoteKey);
+                        copy(move_iterator<vector<char>::iterator>(begin(content)),
+                             move_iterator<vector<char>::iterator>(end(content)),
+                             back_inserter(fdata));
+                    }
+                    else
+                    {
+                        vectorAppend(fdata, file->readAll());
                     }
 
                     // Send result

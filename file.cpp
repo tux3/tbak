@@ -2,6 +2,7 @@
 #include "folder.h"
 #include "serialize.h"
 #include "crc32.h"
+#include "sha512.h"
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -105,7 +106,20 @@ void File::deserialize(std::vector<char>::const_iterator& it)
 
 std::vector<char> File::readAll() const
 {
-    string fullpath = parent->getPath()+"/"+path;
+    string fullpath;
+    if (parent->getType() == FolderType::Source)
+    {
+        fullpath = parent->getPath()+"/"+path;
+    }
+    else if (parent->getType() == FolderType::Archive)
+    {
+        string newhash;
+        sha512str(path.c_str(), path.size(), newhash);
+        fullpath = parent->getFolderDataPath()+"/"+newhash.substr(0,2)+"/"+newhash.substr(2);
+    }
+    else
+        throw std::runtime_error("File::readAll: Unknown parent folder type");
+
     int fd = open(fullpath.c_str(), O_RDWR);
     if (fd < 0)
         throw runtime_error("File::readAll: Unabled to open "+fullpath);

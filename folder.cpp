@@ -2,6 +2,7 @@
 #include "serialize.h"
 #include "sha512.h"
 #include "settings.h"
+#include "filelocker.h"
 #include <dirent.h>
 #include <iostream>
 #include <cstring>
@@ -260,12 +261,22 @@ void Folder::close()
     }
 }
 
-std::string Folder::getFilesDbPath()
+std::string Folder::getFilesDbPath() const
 {
     if (type == FolderType::Source)
         return dataPath()+"/source/"+hash+"/files.dat";
     else if (type == FolderType::Archive)
         return dataPath()+"/archive/"+hash+"/files.dat";
+    else
+        throw std::runtime_error("Folder::getFilesDbPath: Unknown folder type");
+}
+
+std::string Folder::getFolderDataPath() const
+{
+    if (type == FolderType::Source)
+        return dataPath()+"/source/"+hash;
+    else if (type == FolderType::Archive)
+        return dataPath()+"/archive/"+hash;
     else
         throw std::runtime_error("Folder::getFilesDbPath: Unknown folder type");
 }
@@ -282,7 +293,8 @@ void Folder::removeData()
 
 void Folder::writeArchiveFile(const std::vector<char>& data)
 {
-    /// TODO: this
+    open();
+
     cout << "Folder: got "<<data.size()<<" bytes"<<endl;
 
     auto it = data.cbegin();
@@ -291,16 +303,20 @@ void Folder::writeArchiveFile(const std::vector<char>& data)
     cout << "fmeta has "<<fmeta.rawSize<<" raw bytes, "<<fmeta.actualSize<<" actual bytes, "<<metasize<< " meta bytes and "
          <<data.size()-metasize<<" data bytes"<<endl;
 
-    vector<char> content; ///< TODO: Remove this, we don't want to copy gigabytes around
-    std::copy(it, data.cend(), back_inserter(content));
-    cout << "Content (hex) : '";
-    for (char c : content)
-        cout << hex << (int)(uint8_t)c << dec << " ";
-    cout <<"'"<<endl;
-    cout << "Content (raw) : '";
-    for (char c : content)
-        cout << c;
-    cout <<"'"<<endl;
+    assert(data.size() == fmeta.rawSize + metasize);
+
+    string newhash;
+    sha512str(fmeta.path.c_str(), fmeta.path.size(), newhash);
+    cout << "Hash is "<<newhash<<endl;
+    string hashdirPath = getFolderDataPath()+"/"+newhash.substr(0,2);
+    createDirectory(hashdirPath);
+
+    string hashfilePath = hashdirPath+"/"+newhash.substr(2);
+    FileLocker filel(hashfilePath);
+    filel.overwrite(data.data()+metasize, fmeta.rawSize);
+
+    files.push_back(fmeta);
+    close();
 }
 
 std::string Folder::normalizePath(const std::string& folder)

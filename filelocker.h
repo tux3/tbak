@@ -16,7 +16,9 @@ public:
     std::vector<char> readAll() const noexcept;
 
     bool truncate() const noexcept;
+    bool write(const char* data, size_t size) const noexcept;
     bool write(const std::vector<char>& data) const noexcept;
+    bool overwrite(const char* data, size_t size) const noexcept; ///< Truncate then write
     bool overwrite(const std::vector<char>& data) const noexcept; ///< Truncate then write
 
 private:

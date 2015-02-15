@@ -2,6 +2,7 @@
 #define CRYPTO_H
 
 #include <array>
+#include <vector>
 #include <sodium.h>
 
 using PublicKey = std::array<unsigned char, crypto_box_PUBLICKEYBYTES>;
@@ -17,6 +18,9 @@ public:
 
     static void genkeys(PublicKey& pk, SecretKey& sk);
     static std::string keyToString(PublicKey key);
+
+    static void encrypt(std::vector<char> &data, const Server& s, const PublicKey &remoteKey);
+    static void decrypt(std::vector<char>& data, const Server& s, const PublicKey &remoteKey);
 
     static void encryptPacket(NetPacket& packet, const Server& s, const PublicKey &remoteKey);
     static void decryptPacket(NetPacket& packet, const Server& s, const PublicKey &remoteKey);

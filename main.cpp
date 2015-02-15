@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
             for (const Folder& f : fdb.getFolders())
             {
                 std::string path = f.getPath(), type = f.getTypeString(),
-                        size = humanReadableSize(f.getRawSize());
+                        size = humanReadableSize(f.getActualSize());
                 printf("%*s ",48, path.c_str());
                 printf("%*s ",8, type.c_str());
                 printf("%*s \n",12, size.c_str());

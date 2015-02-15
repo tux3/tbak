@@ -209,16 +209,12 @@ void Folder::open(bool forceupdate)
     if (f.is_open())
         f.close();
 
-    if (forceupdate)
+    if (forceupdate && type == FolderType::Source)
         data.clear();
 
     if (data.empty())
     {
-        if (type == FolderType::Archive)
-        {
-            createDirectory(dataPath()+"/archive/"+hash);
-        }
-        else if (type == FolderType::Source)
+        if (type == FolderType::Source)
         {
             createDirectory(dataPath()+"/source/"+hash);
             files.clear();
@@ -234,6 +230,7 @@ void Folder::open(bool forceupdate)
         else if (type == FolderType::Source)
             createDirectory(dataPath()+"/source/"+hash);
 
+        files.clear();
         auto it = data.cbegin();
         vector<vector<char>> filesData = deserializeConsume<decltype(filesData)>(it);
         for (const vector<char>& vec : filesData)
@@ -295,19 +292,16 @@ void Folder::writeArchiveFile(const std::vector<char>& data)
 {
     open();
 
-    cout << "Folder: got "<<data.size()<<" bytes"<<endl;
-
     auto it = data.cbegin();
     File fmeta(this, it);
     size_t metasize = fmeta.metadataSize();
-    cout << "fmeta has "<<fmeta.rawSize<<" raw bytes, "<<fmeta.actualSize<<" actual bytes, "<<metasize<< " meta bytes and "
-         <<data.size()-metasize<<" data bytes"<<endl;
+    //cout << "fmeta has "<<fmeta.rawSize<<" raw bytes, "<<fmeta.actualSize<<" actual bytes, "<<metasize<< " meta bytes and "
+    //     <<data.size()-metasize<<" data bytes"<<endl;
 
     assert(data.size() == fmeta.actualSize);
 
     string newhash;
     sha512str(fmeta.path.c_str(), fmeta.path.size(), newhash);
-    cout << "Hash is "<<newhash<<endl;
     string hashdirPath = getFolderDataPath()+"/"+newhash.substr(0,2);
     createDirectory(hashdirPath);
 

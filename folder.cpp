@@ -283,8 +283,9 @@ void Folder::removeData()
 void Folder::writeArchiveFile(const std::vector<char>& data)
 {
     /// TODO: this
-
     cout << "Folder: got "<<data.size()<<" bytes"<<endl;
+
+
 }
 
 std::string Folder::normalizePath(const std::string& folder)

@@ -50,7 +50,7 @@ private:
 
 private:
     FolderType type; ///< Type (source/archive) of the folder
-    std::string path; ///< Absolute path of the file
+    std::string path; ///< Absolute path of the folder
     std::string hash; ///< Hash of the absolute path
     uint64_t rawSize; ///< Cumulated size of the folder's raw files
     uint64_t actualSize; ////< Size of the actual disk space used, taking metadata, compression, etc into account

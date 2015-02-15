@@ -47,3 +47,8 @@ The server must compress and encrypt with its private key if it owns the source,
 The client sends the name of the folder and file to fetch, the server replies with the File metadata followed by content, or an Abort.
 The actualSize field in the File metadata tells the client that it needs to deserialize actualSize-sizeof(File) bytes of content,
 if the packet data size isn't equal to actualSize, the client should reject the packet.
+
+/// TODO: Reload folder
+Ask the node to reload its folder (open(true)/close()))
+We can't reload every time the client make a requests, that would destroy the disk.
+But once before every sync should be good.

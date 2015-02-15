@@ -242,7 +242,8 @@ void Server::handleClient(NetSock& client)
                         client.send({NetPacketType::Abort});
                         break;
                     }
-                    vector<char> fdata = file->readAll();
+                    vector<char> fdata = file->serialize();
+                    vectorAppend(fdata, file->readAll());
 
                     // Compress and encrypt if needed
                     if (folder.getType() == FolderType::Source)

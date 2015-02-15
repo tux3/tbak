@@ -289,8 +289,19 @@ void Folder::writeArchiveFile(const std::vector<char>& data)
 
 std::string Folder::normalizePath(const std::string& folder)
 {
+    std::string cleanstr;
     char* clean = realpath(folder.c_str(), nullptr);
-    std::string cleanstr(clean);
+    if (clean)
+    {
+        cleanstr = string(clean);
+    }
+    else
+    {
+        cleanstr = folder;
+        while (*cleanstr.rbegin() == '/')
+            cleanstr.resize(cleanstr.size()-1);
+    }
+
     free(clean);
     return cleanstr;
 }

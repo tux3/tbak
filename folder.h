@@ -35,6 +35,7 @@ public:
     void open(bool forceupdate=false); ///< Opens and reads the Files database from disk
     void close(); ///< Closes the Files database
     void removeData(); ///< Delete this Folder's Files database and data path
+    void writeArchiveFile(const std::vector<char>& data); ///< Unserialize and write a downloaded archive file to disk
 
 private:
     std::vector<std::string> listfiles(const char *name, int level); ///< Lists files recursively

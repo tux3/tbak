@@ -40,9 +40,10 @@ When building a diff, we download a file if the remote's version is newer, and u
 so that after transfer the two files have the same lastSyncedTime.
 When a node downloads or uploads a file, it must lock this file. Any request to read/write a locked file must fail.
 
-/// TODO:
-The server should somehow be able to keep the file/node databases in sync between multiple instances.
-E.g. if I have a server running and I do "node add" or "folder sync" from another instance,
-I want the server to keep a consistent state.
-And if the server does updates, I want it to save them on exit.
-=> Maybe just don't allow multiple instances in parallel. That's pretty much the only real always safe solution.
+# DownloadArchiveFile
+Download a single compressed then encrypted file from a node's folder (source or archive).
+All files in archives are compressed and encrypted, files in sources are in plaintext.
+The server must compress and encrypt with its private key if it owns the source, or send the raw file if it has an archive.
+The client sends the name of the folder and file to fetch, the server replies with the File metadata followed by content, or an Abort.
+The actualSize field in the File metadata tells the client that it needs to deserialize actualSize-sizeof(File) bytes of content,
+if the packet data size isn't equal to actualSize, the client should reject the packet.

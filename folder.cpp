@@ -277,3 +277,10 @@ void Folder::removeData()
     else
         throw std::runtime_error("Folder::removeData: Unknown folder type");
 }
+
+void Folder::writeArchiveFile(const std::vector<char>& data)
+{
+    /// TODO: this
+
+    cout << "Folder: got "<<data.size()<<" bytes"<<endl;
+}

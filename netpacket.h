@@ -15,6 +15,7 @@ enum class NetPacketType : uint8_t
     // Authenticated packets
     FolderStats, ///< Request/send a folder's main statistics
     FolderTimeList, ///< List of file names and last acess time of this folder's files
+    DownloadArchiveFile, ///< Fetch file compressed then encrypted-with-source-key from source or archive folder
 };
 
 class NetPacket

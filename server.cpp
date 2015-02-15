@@ -205,6 +205,14 @@ void Server::handleClient(NetSock& client)
                         client.send(packet);
                     }
                 }
+                else if (packet.type == NetPacketType::DownloadArchiveFile)
+                {
+                    auto pit = packet.data.cbegin();
+                    string folderpath = ::deserializeConsume<string>(pit);
+                    string filepath = ::deserializeConsume<string>(pit);
+                    cout << "Download request: "<<folderpath<<", "<<filepath<<endl;
+                    client.send({NetPacketType::Abort});
+                }
                 else
                 {
                     cerr << "Unknown packet of type "<<(int)packet.type<<" with size "<<packet.data.size()<<" received"<<endl;

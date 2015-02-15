@@ -303,6 +303,8 @@ int main(int argc, char* argv[])
                 // Update our local copy (if it's an archive, because sources are read-only)
                 if (lfolder->getType() == FolderType::Archive)
                 {
+                    lfolder->open();
+
                     // Remove files if the remote source removed them
                     if (rfolder->getType() == FolderType::Source)
                     {
@@ -326,7 +328,27 @@ int main(int argc, char* argv[])
                                 return it->mtime < re.mtime;
                         });
                         cout << "Need to download "<<diff.size()<<" files"<<endl;
+
+                        vector<char> folderPathData = ::serialize(folderpath);
+                        for (entry e : diff)
+                        {
+                            cout << "Downloading "<<e.path<<"...\n";
+                            NetPacket request{NetPacketType::DownloadArchiveFile, folderPathData};
+                            vectorAppend(request.data, ::serialize(e.path));
+                            Crypto::encryptPacket(request, server, node.getPk());
+                            sock.send(request);
+                            NetPacket reply = sock.recvPacket();
+                            Crypto::decryptPacket(reply, server, node.getPk());
+                            if (reply.type != NetPacketType::DownloadArchiveFile)
+                            {
+                                cout << "Download failed\n";
+                                continue;
+                            }
+                            lfolder->writeArchiveFile(reply.data);
+                        }
                     }
+
+                    lfolder->close();
                 }
 
                 // Upload files that are newer on our side

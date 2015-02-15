@@ -47,10 +47,6 @@ The client sends the name of the folder and file to fetch, the server replies wi
 The actualSize field in the File metadata tells the client that it needs to deserialize actualSize-sizeof(File) bytes of content,
 if the packet data size isn't equal to actualSize, the client should reject the packet.
 
-/// TODO: folder push
-Use the "folder push" command to ask all nodes that accepted us to do a "folder add-archive" on this folder.
-The next time this folder is sync'd, the folder will be transfered to the nodes
-
 /// TODO: Threading. Handle each client separately.
 
 /// TODO: Faster exit after handling of a signal. Close all client sockets and get out now.
@@ -60,5 +56,3 @@ This implies making Server a real singleton, which it already is de-facto.
 
 /// TODO: Change Server to find its own path via the settings, not via contructor.
 Maybe also give it ownership of ndb/fdb, and make it create them ?
-
-

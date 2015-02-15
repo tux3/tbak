@@ -306,7 +306,6 @@ void Server::handleClient(NetSock& client)
                 {
                     auto pit = packet.data.cbegin();
                     string folderpath = ::deserializeConsume<string>(pit);
-                    cout << "Upload archive file request in "<<folderpath<<endl;
 
                     // Find folder
                     vector<Folder>& folders = fdb.getFolders();
@@ -321,6 +320,9 @@ void Server::handleClient(NetSock& client)
                     }
 
                     vector<char> data(pit, packet.data.cend());
+                    auto it = data.cbegin();
+                    File fmeta(&*fit, it);
+                    cout << "Upload archive file request in "<<folderpath<<" of "<<fmeta.path<<endl;
                     fit->writeArchiveFile(data, *this, remoteKey);
                     client.send({NetPacketType::UploadArchiveFile});
                 }

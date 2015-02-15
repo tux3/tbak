@@ -242,20 +242,24 @@ void Server::handleClient(NetSock& client)
                         client.send({NetPacketType::Abort});
                         break;
                     }
-                    vector<char> fdata = file->serialize();
+                    vector<char> fdata;
 
                     // Compress and encrypt if needed
                     if (folder.getType() == FolderType::Source)
                     {
+                        File archived = *file;
                         vector<char> content = file->readAll();
                         content = Compression::deflate(content);
                         Crypto::encrypt(content, *this, remoteKey);
+                        archived.actualSize = archived.metadataSize() + content.size();
+                        fdata = archived.serialize();
                         copy(move_iterator<vector<char>::iterator>(begin(content)),
                              move_iterator<vector<char>::iterator>(end(content)),
                              back_inserter(fdata));
                     }
                     else
                     {
+                        fdata = file->serialize();
                         vectorAppend(fdata, file->readAll());
                     }
 

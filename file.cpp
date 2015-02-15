@@ -10,6 +10,7 @@
 #include <sys/file.h>
 #include <unistd.h>
 #include <stdexcept>
+#include <cassert>
 
 using namespace std;
 
@@ -37,6 +38,8 @@ File::File(const Folder* parent, std::vector<char>::const_iterator& data)
 
 void File::readAttributes()
 {
+    assert(parent->getType() == FolderType::Source);
+
     struct stat buf;
     if (stat((parent->getPath()+"/"+path).c_str(), &buf) < 0)
     {

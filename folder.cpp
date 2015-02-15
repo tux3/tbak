@@ -303,7 +303,7 @@ void Folder::writeArchiveFile(const std::vector<char>& data)
     cout << "fmeta has "<<fmeta.rawSize<<" raw bytes, "<<fmeta.actualSize<<" actual bytes, "<<metasize<< " meta bytes and "
          <<data.size()-metasize<<" data bytes"<<endl;
 
-    assert(data.size() == fmeta.rawSize + metasize);
+    assert(data.size() == fmeta.actualSize);
 
     string newhash;
     sha512str(fmeta.path.c_str(), fmeta.path.size(), newhash);

@@ -43,8 +43,8 @@ int encrypt(char encrypted[], const uint8_t pk[], const uint8_t sk[], const char
 
 int decrypt(char plain[], const uint8_t pk[], const uint8_t sk[], const char nonce[], const char encrypted[], int length)
 {
-    uint8_t* temp_encrypted = new uint8_t[length+crypto_box_BOXZEROBYTES];
-    uint8_t* temp_plain = new uint8_t[length+crypto_box_BOXZEROBYTES];
+    uint8_t* temp_encrypted = new uint8_t[length+crypto_box_ZEROBYTES];
+    uint8_t* temp_plain = new uint8_t[length+crypto_box_ZEROBYTES];
 
     memset(temp_encrypted, '\0', crypto_box_BOXZEROBYTES);
     memcpy(temp_encrypted + crypto_box_BOXZEROBYTES, encrypted, length);

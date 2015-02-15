@@ -281,6 +281,7 @@ int main(int argc, char* argv[])
                     cout << "Failed to sync with node "<<node.getUri()<<endl;
                     continue;
                 }
+
                 vector<char> rFileTimes = Compression::inflate(reply.data);
                 reply.data.clear();
                 reply.data.shrink_to_fit();
@@ -306,21 +307,21 @@ int main(int argc, char* argv[])
                     if (rfolder->getType() == FolderType::Source)
                     {
                         vector<entry> diff;
-                        set_difference(begin(rEntries), end(rEntries), begin(lEntries), end(lEntries),begin(diff));
+                        set_difference(begin(lEntries), end(lEntries), begin(rEntries), end(rEntries),back_inserter(diff));
                         cout << "Need to remove "<<diff.size()<<" files"<<endl;
                     }
 
                     // Download files that are newer on the remote
                     {
                         vector<entry> diff;
-                        copy_if(begin(rEntries), end(rEntries), begin(diff), [&lEntries](const entry& re)
+                        copy_if(begin(rEntries), end(rEntries), back_inserter(diff), [&lEntries](const entry& re)
                         {
                             auto it = find_if(begin(lEntries), end(lEntries), [re](const entry& e)
                             {
                                 return e.path == re.path;
                             });
                             if (it == end(lEntries))
-                                return false;
+                                return true;
                             else
                                 return it->mtime < re.mtime;
                         });
@@ -332,14 +333,14 @@ int main(int argc, char* argv[])
                 if (rfolder->getType() == FolderType::Archive)
                 {
                     vector<entry> diff;
-                    copy_if(begin(lEntries), end(lEntries), begin(diff), [&rEntries](const entry& le)
+                    copy_if(begin(lEntries), end(lEntries), back_inserter(diff), [&rEntries](const entry& le)
                     {
                         auto it = find_if(begin(rEntries), end(rEntries), [le](const entry& e)
                         {
                             return e.path == le.path;
                         });
                         if (it == end(rEntries))
-                            return false;
+                            return true;
                         else
                             return it->mtime < le.mtime;
                     });

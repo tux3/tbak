@@ -20,11 +20,10 @@ std::vector<char> Compression::deflate(const std::vector<char> in)
     deflateInit2(&strm, Z_BEST_COMPRESSION, Z_DEFLATED,
                 window, memLevel, Z_DEFAULT_STRATEGY);
     do {
-        int have;
         strm.avail_out = chunk;
         strm.next_out = buf;
         ::deflate(&strm, Z_FINISH);
-        have = chunk - strm.avail_out;
+        int have = chunk - strm.avail_out;
         out.insert(end(out), buf, buf+have);
     } while (strm.avail_out == 0);
     deflateEnd (& strm);
@@ -44,11 +43,10 @@ std::vector<char> Compression::inflate(const std::vector<char> in)
     strm.avail_in = in.size();
     inflateInit2(&strm, window);
     do {
-            int have;
             strm.avail_out = chunk;
             strm.next_out = buf;
             ::inflate(&strm, Z_FINISH);
-            have = chunk - strm.avail_out;
+            int have = chunk - strm.avail_out;
             out.insert(end(out), buf, buf+have);
         } while (strm.avail_out == 0);
         inflateEnd (& strm);

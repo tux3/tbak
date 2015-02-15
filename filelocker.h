@@ -13,7 +13,7 @@ public:
     FileLocker(const std::string& path);
     ~FileLocker();
 
-    std::vector<char> readAll() const;
+    std::vector<char> readAll() const noexcept;
 
     bool truncate() const noexcept;
     bool write(const std::vector<char>& data) const noexcept;

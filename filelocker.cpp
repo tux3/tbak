@@ -25,14 +25,14 @@ FileLocker::~FileLocker()
     close(fd);
 }
 
-std::vector<char> FileLocker::readAll() const
+std::vector<char> FileLocker::readAll() const noexcept
 {
     lock_guard<std::mutex> lock(mutex);
     size_t size = lseek(fd, 0, SEEK_END);
     lseek(fd, 0, SEEK_SET);
 
     vector<char> data(size);
-    read(fd, data.data(), size);
+    (void) read(fd, data.data(), size);
     return data;
 }
 

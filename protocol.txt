@@ -57,4 +57,4 @@ This implies making Server a real singleton, which it already is de-facto.
 /// TODO: Change Server to find its own path via the settings, not via contructor.
 Maybe also give it ownership of ndb/fdb, and make it create them ?
 
-/// TODO: Remove some useless fields in our data structures, like File's crc32
+

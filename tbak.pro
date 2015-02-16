@@ -8,7 +8,6 @@ SOURCES += main.cpp \
     folderdb.cpp \
     folder.cpp \
     file.cpp \
-    crc32.cpp \
     serialize.cpp \
     settings.cpp \
     humanReadable.cpp \
@@ -19,7 +18,6 @@ SOURCES += main.cpp \
     netaddr.cpp \
     netsock.cpp \
     server.cpp \
-    sha512.cpp \
     compression.cpp \
     filelocker.cpp
 
@@ -33,7 +31,6 @@ HEADERS += \
     folderdb.h \
     folder.h \
     file.h \
-    crc32.h \
     serialize.h \
     settings.h \
     humanReadable.h \
@@ -44,7 +41,6 @@ HEADERS += \
     netaddr.h \
     netsock.h \
     server.h \
-    sha512.h \
     compression.h \
     filelocker.h
 

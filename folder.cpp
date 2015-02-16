@@ -1,6 +1,5 @@
 #include "folder.h"
 #include "serialize.h"
-#include "sha512.h"
 #include "settings.h"
 #include "filelocker.h"
 #include "crypto.h"
@@ -29,7 +28,7 @@ Folder::Folder(const std::string& Path)
     path = normalizePath(Path);
     rawSize = actualSize = 0;
 
-    sha512str(path.c_str(), path.size(), hash);
+    hash = Crypto::sha512str(path);
 
     open();
 }
@@ -150,7 +149,7 @@ void Folder::deserialize(const std::vector<char>& data)
     rawSize = deserializeConsume<decltype(rawSize)>(it);
     actualSize = deserializeConsume<decltype(actualSize)>(it);
 
-    sha512str(path.c_str(), path.size(), hash);
+    hash = Crypto::sha512str(path);
 }
 
 std::string Folder::getPath() const
@@ -345,8 +344,7 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
 
     if (type == FolderType::Archive)
     {
-        string newhash;
-        sha512str(fmeta.path.c_str(), fmeta.path.size(), newhash);
+        string newhash = Crypto::sha512str(fmeta.path);
         string hashdirPath = getFolderDataPath()+"/"+newhash.substr(0,2);
         createDirectory(hashdirPath);
 

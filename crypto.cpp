@@ -53,7 +53,7 @@ void Crypto::encryptPacket(NetPacket& packet, const Server &s, const PublicKey& 
 {
     if (!packet.data.size())
         return;
-    size_t encryptedsize = packet.data.size()+crypto_box_NONCEBYTES+crypto_box_BOXZEROBYTES;
+    size_t encryptedsize = packet.data.size()+crypto_box_NONCEBYTES+crypto_box_MACBYTES;
     std::vector<char> encrypted(encryptedsize);
     randombytes((uint8_t*)&encrypted[0], crypto_box_NONCEBYTES);
     rawencrypt(&encrypted[crypto_box_NONCEBYTES], &remoteKey[0], &s.getSecretKey()[0], &encrypted[0],
@@ -65,13 +65,12 @@ void Crypto::decryptPacket(NetPacket& packet, const Server &s, const PublicKey& 
 {
     if (!packet.data.size())
             return;
-    else if (packet.data.size() < crypto_box_NONCEBYTES)
-        throw std::runtime_error("Crypto::decryptPacket: Packet doesn't have a nonce, can't decrypt");
-    size_t plainsize = packet.data.size()-crypto_box_NONCEBYTES;
+    else if (packet.data.size() < crypto_box_NONCEBYTES+crypto_box_MACBYTES)
+        throw std::runtime_error("Crypto::decryptPacket: Packet is too short, can't decrypt");
+    size_t plainsize = packet.data.size()-crypto_box_NONCEBYTES-crypto_box_MACBYTES;
     std::vector<char> plaintext(plainsize);
     char* nonce = &packet.data[0], *encrypted=&packet.data[0]+crypto_box_NONCEBYTES;
     rawdecrypt(&plaintext[0], &remoteKey[0], &s.getSecretKey()[0], nonce, encrypted, plainsize);
-    plaintext.resize(plainsize-crypto_box_BOXZEROBYTES);
     packet.data = plaintext;
 }
 
@@ -79,7 +78,7 @@ void Crypto::encrypt(std::vector<char>& data, const Server& s, const PublicKey &
 {
     if (!data.size())
         return;
-    size_t encryptedsize = data.size()+crypto_box_NONCEBYTES+crypto_box_BOXZEROBYTES;
+    size_t encryptedsize = data.size()+crypto_box_NONCEBYTES+crypto_box_MACBYTES;
     std::vector<char> encrypted(encryptedsize);
     randombytes((uint8_t*)&encrypted[0], crypto_box_NONCEBYTES);
     rawencrypt(&encrypted[crypto_box_NONCEBYTES], &remoteKey[0], &s.getSecretKey()[0], &encrypted[0],
@@ -91,13 +90,12 @@ void Crypto::decrypt(std::vector<char> &data, const Server& s, const PublicKey &
 {
     if (!data.size())
             return;
-    else if (data.size() < crypto_box_NONCEBYTES)
-        throw std::runtime_error("Crypto::decryptPacket: Packet doesn't have a nonce, can't decrypt");
-    size_t plainsize = data.size()-crypto_box_NONCEBYTES;
+    else if (data.size() < crypto_box_NONCEBYTES+crypto_box_MACBYTES)
+        throw std::runtime_error("Crypto::decryptPacket: Packet is too short, can't decrypt");
+    size_t plainsize = data.size()-crypto_box_NONCEBYTES-crypto_box_MACBYTES;
     std::vector<char> plaintext(plainsize);
     char* nonce = &data[0], *encrypted=&data[0]+crypto_box_NONCEBYTES;
     rawdecrypt(&plaintext[0], &remoteKey[0], &s.getSecretKey()[0], nonce, encrypted, plainsize);
-    plaintext.resize(plainsize-crypto_box_BOXZEROBYTES);
     data = plaintext;
 }
 

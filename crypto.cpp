@@ -70,7 +70,7 @@ void Crypto::decryptPacket(NetPacket& packet, const Server &s, const PublicKey& 
     size_t plainsize = packet.data.size()-crypto_box_NONCEBYTES-crypto_box_MACBYTES;
     std::vector<char> plaintext(plainsize);
     char* nonce = &packet.data[0], *encrypted=&packet.data[0]+crypto_box_NONCEBYTES;
-    rawdecrypt(&plaintext[0], &remoteKey[0], &s.getSecretKey()[0], nonce, encrypted, plainsize);
+    rawdecrypt(&plaintext[0], &remoteKey[0], &s.getSecretKey()[0], nonce, encrypted, packet.data.size()-crypto_box_NONCEBYTES);
     packet.data = plaintext;
 }
 
@@ -95,7 +95,7 @@ void Crypto::decrypt(std::vector<char> &data, const Server& s, const PublicKey &
     size_t plainsize = data.size()-crypto_box_NONCEBYTES-crypto_box_MACBYTES;
     std::vector<char> plaintext(plainsize);
     char* nonce = &data[0], *encrypted=&data[0]+crypto_box_NONCEBYTES;
-    rawdecrypt(&plaintext[0], &remoteKey[0], &s.getSecretKey()[0], nonce, encrypted, plainsize);
+    rawdecrypt(&plaintext[0], &remoteKey[0], &s.getSecretKey()[0], nonce, encrypted, data.size()-crypto_box_NONCEBYTES);
     data = plaintext;
 }
 

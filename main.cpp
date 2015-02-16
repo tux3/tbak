@@ -70,6 +70,7 @@ int main(int argc, char* argv[])
     }
 
     checkDataDir();
+    sodium_init();
 
     string command{argv[1]};
     if (command == "help")

@@ -83,7 +83,7 @@ std::vector<std::string> Folder::listfiles(const char *name, int level) const
             vector<string> newfiles = listfiles(path, level + 1);
             files.insert(end(files), begin(newfiles), end(newfiles));
         }
-        else
+        else if (entry->d_type == DT_REG)
         {
             char path[1024];
             int len = snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);

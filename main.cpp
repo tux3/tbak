@@ -288,11 +288,16 @@ int main(int argc, char* argv[])
             {
                 cout << "Syncing with "<<node.getUri()<<"..."<<endl;
                 Server server(serverConfigPath(), ndb, fdb);
-                NetSock sock(NetAddr{node.getUri()});
+                NetSock sock;
+                if (!sock.connect(NetAddr{node.getUri()}))
+                {
+                    cout << "Couldn't connect to node "<<node.getUri()<<endl;
+                    continue;
+                }
                 if (!Net::sendAuth(sock, server))
                 {
-                    cerr << "Couldn't authenticate with that node"<<endl;
-                    return -1;
+                    cout << "Couldn't authenticate with node "<<node.getUri()<<endl;
+                    continue;
                 }
 
                 // Get status of remote folder

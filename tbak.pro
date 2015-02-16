@@ -17,7 +17,6 @@ SOURCES += main.cpp \
     crypto.cpp \
     netpacket.cpp \
     netaddr.cpp \
-    netstream.cpp \
     netsock.cpp \
     server.cpp \
     sha512.cpp \
@@ -43,7 +42,6 @@ HEADERS += \
     crypto.h \
     netpacket.h \
     netaddr.h \
-    netstream.h \
     netsock.h \
     server.h \
     sha512.h \

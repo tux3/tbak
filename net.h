@@ -3,7 +3,6 @@
 
 #include "crypto.h"
 #include "netpacket.h"
-#include "netstream.h"
 #include "netaddr.h"
 
 /// Handles low and high level networking

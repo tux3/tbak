@@ -22,7 +22,7 @@ File::File(const File& other)
 File::File(const Folder *parent, const std::string& Path)
     : parent{parent},
       rawSize{0}, actualSize{0},
-      crc32{0}, attrs{0,0,0,0}
+       attrs{0,0,0,0}
 {
     path = Path;
     //computeCRC();
@@ -49,7 +49,6 @@ File& File::operator=(const File& other)
     path = other.path;
     rawSize = other.rawSize;
     actualSize = other.actualSize;
-    crc32 = other.crc32;
     attrs = other.attrs;
     return *this;
 }
@@ -73,24 +72,6 @@ void File::readAttributes()
     actualSize += metadataSize();
 }
 
-void File::computeCRC()
-{
-    ifstream f{path, ios_base::binary};
-    if (f.is_open())
-    {
-        f.seekg(0, std::ios::end);
-        std::streamsize size = f.tellg();
-        f.seekg(0, std::ios::beg);
-        char* data = new char[size];
-        f.read(data, size);
-        f.close();
-
-        crc32 = ::crc32(data, size);
-
-        delete data;
-    }
-}
-
 vector<char> File::serialize() const
 {
     lock_guard<std::mutex> lock(mutex);
@@ -100,7 +81,6 @@ vector<char> File::serialize() const
     serializeAppend(data, path);
     serializeAppend(data, rawSize);
     serializeAppend(data, actualSize);
-    serializeAppend(data, crc32);
     serializeAppend(data, attrs.mtime);
     serializeAppend(data, attrs.userId);
     serializeAppend(data, attrs.groupId);
@@ -122,7 +102,6 @@ void File::deserialize(std::vector<char>::const_iterator& it)
     path = deserializeConsume<decltype(path)>(it);
     rawSize = deserializeConsume<decltype(rawSize)>(it);
     actualSize = deserializeConsume<decltype(actualSize)>(it);
-    crc32 = deserializeConsume<decltype(crc32)>(it);
     attrs.mtime = deserializeConsume<decltype(attrs.mtime)>(it);
     attrs.userId = deserializeConsume<decltype(attrs.userId)>(it);
     attrs.groupId = deserializeConsume<decltype(attrs.groupId)>(it);

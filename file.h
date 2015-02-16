@@ -39,14 +39,12 @@ public:
 
 private:
     void readAttributes(); ///< Assumes path is valid
-    void computeCRC(); ///< Assumes path is valid
 
 public:
     const Folder* parent;
     std::string path; ///< Path of the file relative to it's Folder (the backup folder)
     uint64_t rawSize; ///< Size of the uncompressed, raw file itself
     uint64_t actualSize; ///< Size of the file taking compression, metadata, etc into account
-    uint32_t crc32; ///< CRC32 of the raw file data
     FileAttr attrs; ///< File attributes
     mutable std::mutex mutex;
 };

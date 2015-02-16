@@ -75,7 +75,7 @@ std::vector<std::string> Folder::listfiles(const char *name, int level) const
     {
         if (entry->d_type == DT_DIR)
         {
-            char path[1024];
+            char path[PATH_MAX];
             int len = snprintf(path, sizeof(path)-1, "%s/%s", name, entry->d_name);
             path[len] = 0;
             if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
@@ -85,7 +85,7 @@ std::vector<std::string> Folder::listfiles(const char *name, int level) const
         }
         else if (entry->d_type == DT_REG)
         {
-            char path[1024];
+            char path[PATH_MAX];
             int len = snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
             std::string s(path, len);
             files.push_back(s);
@@ -109,7 +109,7 @@ void Folder::deleteFolderRecursively(const char* name) const
     {
         if (entry->d_type == DT_DIR)
         {
-            char path[1024];
+            char path[PATH_MAX];
             int len = snprintf(path, sizeof(path)-1, "%s/%s", name, entry->d_name);
             path[len] = 0;
             if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
@@ -118,7 +118,7 @@ void Folder::deleteFolderRecursively(const char* name) const
         }
         else
         {
-            char path[1024];
+            char path[PATH_MAX];
             snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
             unlink(path);
         }

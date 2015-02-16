@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 #include "file.h"
 #include "crypto.h"
 
@@ -19,9 +20,11 @@ enum class FolderType : uint8_t
 class Folder
 {
 public:
+    Folder(const Folder& other);
     Folder(const std::string& path); ///< Construct from a real source folder
     Folder(const std::vector<char>& data); ///< Construct from serialized data
     ~Folder();
+    Folder& operator=(const Folder& other);
 
     std::vector<char> serialize() const;
     void deserialize(const std::vector<char>& data);
@@ -42,18 +45,17 @@ public:
 
     void open(bool forceupdate=false); ///< Opens and reads the Files database from disk
     void close(); ///< Closes the Files database
-    void removeData(); ///< Delete this Folder's Files database and data path
+    void removeData() const; ///< Delete this Folder's Files database and data path
     /// Unserialize and write a downloaded archive file to disk
     void writeArchiveFile(const std::vector<char>& data, const Server& s, const PublicKey& rpk);
 
 private:
-    std::vector<std::string> listfiles(const char *name, int level); ///< Lists files recursively
-    void deleteFolderRecursively(const char* path); ///< Deletes the folder and all of its contents
+    std::vector<std::string> listfiles(const char *name, int level) const; ///< Lists files recursively
+    void deleteFolderRecursively(const char* path) const; ///< Deletes the folder and all of its contents
     void updateSizes(); ///< Re-computes rawSize and actualSize
-    void createDirectory(const char* path); ///< Create a physical directory on disk
-    void createDirectory(const std::string& path); ///< Create a physical directory on disk
-public:    void createPathTo(const std::string& relfile); ///< Create the necessary directories to a file in this folder
-/// TODO: Un-publicify ^
+    void createDirectory(const char* path) const; ///< Create a physical directory on disk
+    void createDirectory(const std::string& path) const; ///< Create a physical directory on disk
+    void createPathTo(const std::string& relfile) const; ///< Create the necessary directories to a file in this folder
 
 private:
     FolderType type; ///< Type (source/archive) of the folder
@@ -63,6 +65,7 @@ private:
     uint64_t actualSize; ////< Size of the actual disk space used, taking metadata, compression, etc into account
     std::vector<File> files; ///< Files stored in this directory
     bool isOpen;
+    mutable std::recursive_mutex mutex;
 };
 
 #endif // FOLDER_H

@@ -18,6 +18,11 @@
 
 using namespace std;
 
+Folder::Folder(const Folder& other)
+{
+    *this = other;
+}
+
 Folder::Folder(const std::string& Path)
 {
     type = FolderType::Source;
@@ -41,7 +46,21 @@ Folder::~Folder()
         close();
 }
 
-std::vector<std::string> Folder::listfiles(const char *name, int level)
+Folder& Folder::operator=(const Folder& other)
+{
+    lock_guard<std::recursive_mutex> lock(mutex);
+    lock_guard<std::recursive_mutex> lockother(other.mutex);
+    type = other.type;
+    path = other.path;
+    hash = other.hash;
+    rawSize = other.rawSize;
+    actualSize = other.actualSize;
+    files = other.files;
+    isOpen = other.isOpen;
+    return *this;
+}
+
+std::vector<std::string> Folder::listfiles(const char *name, int level) const
 {
     assert(name[strlen(name)-1] != '/');
     std::vector<std::string> files;
@@ -77,7 +96,7 @@ std::vector<std::string> Folder::listfiles(const char *name, int level)
     return files;
 }
 
-void Folder::deleteFolderRecursively(const char* name)
+void Folder::deleteFolderRecursively(const char* name) const
 {
     DIR *dir;
     struct dirent *entry;
@@ -111,6 +130,7 @@ void Folder::deleteFolderRecursively(const char* name)
 
 vector<char> Folder::serialize() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     vector<char> data;
 
     serializeAppend(data, (uint8_t)type);
@@ -123,6 +143,7 @@ vector<char> Folder::serialize() const
 
 void Folder::deserialize(const std::vector<char>& data)
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     auto it = begin(data);
     type = (FolderType)deserializeConsume<uint8_t>(it);
     path = deserializeConsume<decltype(path)>(it);
@@ -134,16 +155,19 @@ void Folder::deserialize(const std::vector<char>& data)
 
 std::string Folder::getPath() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     return path;
 }
 
 FolderType Folder::getType() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     return type;
 }
 
 void Folder::setType(FolderType newtype)
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     if (newtype != FolderType::Archive
         && newtype != FolderType::Source)
         return;
@@ -153,6 +177,7 @@ void Folder::setType(FolderType newtype)
 
 std::string Folder::getTypeString() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     if (type == FolderType::Source)
         return "source";
     else if (type == FolderType::Archive)
@@ -163,26 +188,31 @@ std::string Folder::getTypeString() const
 
 uint64_t Folder::getRawSize() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     return rawSize;
 }
 
 uint64_t Folder::getActualSize() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     return actualSize;
 }
 
 size_t Folder::getFileCount() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     return files.size();
 }
 
 const std::vector<File>& Folder::getFiles() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     return files;
 }
 
 void Folder::updateSizes()
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     if (!isOpen)
         throw std::runtime_error("Folder::updateSizes: Folder not open");
 
@@ -194,18 +224,19 @@ void Folder::updateSizes()
      }
 }
 
-void Folder::createDirectory(const char* path)
+void Folder::createDirectory(const char* path) const
 {
     mkdir(path, S_IRWXU | S_IRGRP | S_IWGRP);
 }
 
-void Folder::createDirectory(const std::string& path)
+void Folder::createDirectory(const std::string& path) const
 {
     createDirectory(path.c_str());
 }
 
 void Folder::open(bool forceupdate)
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     ifstream f(getFilesDbPath(), ios_base::binary);
     vector<char> data((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
     if (f.is_open())
@@ -251,6 +282,7 @@ void Folder::open(bool forceupdate)
 
 void Folder::close()
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     vector<char> data;
     vector<vector<char>> filesData;
     for (const File& f : files)
@@ -267,6 +299,7 @@ void Folder::close()
 
 std::string Folder::getFilesDbPath() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     if (type == FolderType::Source)
         return dataPath()+"/source/"+hash+"/files.dat";
     else if (type == FolderType::Archive)
@@ -277,6 +310,7 @@ std::string Folder::getFilesDbPath() const
 
 std::string Folder::getFolderDataPath() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     if (type == FolderType::Source)
         return dataPath()+"/source/"+hash;
     else if (type == FolderType::Archive)
@@ -285,8 +319,9 @@ std::string Folder::getFolderDataPath() const
         throw std::runtime_error("Folder::getFilesDbPath: Unknown folder type");
 }
 
-void Folder::removeData()
+void Folder::removeData() const
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     if (type == FolderType::Source)
         deleteFolderRecursively((dataPath()+"/source/"+hash).c_str());
     else if (type == FolderType::Archive)
@@ -297,6 +332,7 @@ void Folder::removeData()
 
 void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, const PublicKey& rpk)
 {
+    lock_guard<std::recursive_mutex> lock(mutex);
     open();
 
     auto it = data.cbegin();
@@ -377,7 +413,7 @@ std::string Folder::normalizeFileName(const std::string& folder, const std::stri
     return fileclean;
 }
 
-void Folder::createPathTo(const std::string& relfile)
+void Folder::createPathTo(const std::string& relfile) const
 {
     size_t lastpos = 0;
     for (;;)

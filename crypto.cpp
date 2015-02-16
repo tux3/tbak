@@ -131,3 +131,13 @@ void Crypto::decrypt(std::vector<char> &data, const Server& s, const PublicKey &
     plaintext.resize(plainsize-crypto_box_BOXZEROBYTES);
     data = plaintext;
 }
+
+std::string Crypto::sha512str(std::string str)
+{
+    unsigned char h[crypto_hash_BYTES];
+    crypto_hash(h, (const unsigned char *) str.c_str(), str.size());
+    char h_hex[crypto_hash_BYTES + 1];
+    sodium_bin2hex(h_hex, sizeof h_hex, h, sizeof h);
+
+    return std::string(h_hex);
+}

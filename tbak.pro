@@ -19,7 +19,6 @@ SOURCES += main.cpp \
     netstream.cpp \
     netsock.cpp \
     server.cpp \
-    sha512.cpp \
     compression.cpp \
     filelocker.cpp
 
@@ -44,7 +43,6 @@ HEADERS += \
     netstream.h \
     netsock.h \
     server.h \
-    sha512.h \
     compression.h \
     filelocker.h
 

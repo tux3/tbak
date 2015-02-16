@@ -1,7 +1,6 @@
 #include "file.h"
 #include "folder.h"
 #include "serialize.h"
-#include "sha512.h"
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -117,8 +116,7 @@ std::vector<char> File::readAll() const
     }
     else if (parent->getType() == FolderType::Archive)
     {
-        string newhash;
-        sha512str(path.c_str(), path.size(), newhash);
+        string newhash = Crypto::sha512str(path);
         fullpath = parent->getFolderDataPath()+"/"+newhash.substr(0,2)+"/"+newhash.substr(2);
     }
     else

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <mutex>
 
 using std::uint8_t;
 using std::uint16_t;
@@ -24,9 +25,11 @@ struct FileAttr
 class File
 {
 public:
+    File(const File& other);
     File(const Folder* parent, const std::string& path); ///< Construct from a real source file
     File(const Folder* parent, const std::vector<char>& data); ///< Construct from serialized data
     File(const Folder* parent, std::vector<char>::const_iterator& data); ///< Construct from serialized data
+    File& operator=(const File& other);
 
     std::vector<char> serialize() const;
     void deserialize(const std::vector<char>& data);
@@ -45,6 +48,7 @@ public:
     uint64_t actualSize; ///< Size of the file taking compression, metadata, etc into account
     uint32_t crc32; ///< CRC32 of the raw file data
     FileAttr attrs; ///< File attributes
+    mutable std::mutex mutex;
 };
 
 #endif // FILE_H

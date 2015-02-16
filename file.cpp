@@ -14,6 +14,11 @@
 
 using namespace std;
 
+File::File(const File& other)
+{
+    *this = other;
+}
+
 File::File(const Folder *parent, const std::string& Path)
     : parent{parent},
       rawSize{0}, actualSize{0},
@@ -34,6 +39,19 @@ File::File(const Folder* parent, std::vector<char>::const_iterator& data)
     : parent{parent}
 {
     deserialize(data);
+}
+
+File& File::operator=(const File& other)
+{
+    lock_guard<std::mutex> lock(mutex);
+    lock_guard<std::mutex> lockother(other.mutex);
+    parent = other.parent;
+    path = other.path;
+    rawSize = other.rawSize;
+    actualSize = other.actualSize;
+    crc32 = other.crc32;
+    attrs = other.attrs;
+    return *this;
 }
 
 void File::readAttributes()
@@ -75,6 +93,8 @@ void File::computeCRC()
 
 vector<char> File::serialize() const
 {
+    lock_guard<std::mutex> lock(mutex);
+
     vector<char> data;
 
     serializeAppend(data, path);
@@ -97,6 +117,8 @@ void File::deserialize(const std::vector<char>& data)
 
 void File::deserialize(std::vector<char>::const_iterator& it)
 {
+    lock_guard<std::mutex> lock(mutex);
+
     path = deserializeConsume<decltype(path)>(it);
     rawSize = deserializeConsume<decltype(rawSize)>(it);
     actualSize = deserializeConsume<decltype(actualSize)>(it);
@@ -109,6 +131,8 @@ void File::deserialize(std::vector<char>::const_iterator& it)
 
 std::vector<char> File::readAll() const
 {
+    lock_guard<std::mutex> lock(mutex);
+
     string fullpath;
     if (parent->getType() == FolderType::Source)
     {

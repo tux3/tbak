@@ -25,7 +25,7 @@ File::File(const Folder *parent, const std::string& Path)
       crc32{0}, attrs{0,0,0,0}
 {
     path = Path;
-    computeCRC();
+    //computeCRC();
     readAttributes();
 }
 

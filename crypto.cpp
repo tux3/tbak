@@ -12,16 +12,6 @@ Crypto::Crypto()
 
 }
 
-void randombytes(char buffer[], unsigned long long size)
-{
-    int fd = open( "/dev/urandom", O_RDONLY );
-    if(fd < 0)
-        throw std::runtime_error("Failed to open /dev/urandom!");
-    int rc;
-    if((rc = read(fd, buffer, size)) >= 0)
-        close(fd);
-}
-
 int rawencrypt(char encrypted[], const uint8_t pk[], const uint8_t sk[], const char nonce[], const char plain[], int length)
 {
     uint8_t* temp_encrypted = new uint8_t[length+crypto_box_ZEROBYTES];

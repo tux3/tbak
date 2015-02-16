@@ -103,7 +103,7 @@ std::string Crypto::sha512str(std::string str)
 {
     unsigned char h[crypto_hash_BYTES];
     crypto_hash(h, (const unsigned char *) str.c_str(), str.size());
-    char h_hex[crypto_hash_BYTES + 1];
+    char h_hex[crypto_hash_BYTES * 2 + 1];
     sodium_bin2hex(h_hex, sizeof h_hex, h, sizeof h);
 
     return std::string(h_hex);

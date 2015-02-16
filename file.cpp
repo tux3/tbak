@@ -1,7 +1,6 @@
 #include "file.h"
 #include "folder.h"
 #include "serialize.h"
-#include "crc32.h"
 #include "sha512.h"
 #include <cstdlib>
 #include <iostream>
@@ -25,7 +24,6 @@ File::File(const Folder *parent, const std::string& Path)
        attrs{0,0,0,0}
 {
     path = Path;
-    //computeCRC();
     readAttributes();
 }
 

@@ -8,7 +8,6 @@ SOURCES += main.cpp \
     folderdb.cpp \
     folder.cpp \
     file.cpp \
-    crc32.cpp \
     serialize.cpp \
     settings.cpp \
     humanReadable.cpp \
@@ -34,7 +33,6 @@ HEADERS += \
     folderdb.h \
     folder.h \
     file.h \
-    crc32.h \
     serialize.h \
     settings.h \
     humanReadable.h \

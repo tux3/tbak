@@ -50,4 +50,4 @@ HEADERS += \
     compression.h \
     filelocker.h
 
-LIBS += -lsodium -lz
+LIBS += -lsodium -lz -lpthread

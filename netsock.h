@@ -32,7 +32,7 @@ public:
 protected:
     NetSock(int sockfd, bool connected=false);
 
-private:
+public:
     NetSock(const NetSock& other) = delete;
     NetSock& operator=(const NetSock&) = delete;
 

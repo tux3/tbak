@@ -4,6 +4,7 @@
 #include "netsock.h"
 #include "crypto.h"
 #include <atomic>
+#include <mutex>
 
 class NodeDB;
 class FolderDB;
@@ -34,6 +35,7 @@ private:
     PublicKey pk;
     NodeDB& ndb;
     FolderDB& fdb;
+    std::mutex coarselock; ///< Big lock of the server, for easy multithreading
 
 public:
     static std::atomic<bool> abortall; ///< If set to true, the server will return form its event loop

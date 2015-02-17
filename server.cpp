@@ -10,6 +10,7 @@
 #include <fstream>
 #include <cstring>
 #include <algorithm>
+#include <thread>
 
 using namespace std;
 
@@ -76,15 +77,16 @@ int Server::exec()
         return -1;
     }
 
+    vector<thread> clients;
+    vector<NetSock> sock;
     for (;;)
     {
         if (abortall)
             return 0;
 
-        NetSock client = insock.accept();
-        handleClient(client);
+        sock.emplace_back(insock.accept());
+        clients.emplace_back(thread{&Server::handleClient, this, ref(*sock.rbegin())});
     }
-
     return 0;
 }
 
@@ -116,6 +118,12 @@ void Server::handleClient(NetSock& client)
                 break;
             }
             NetPacket packet = NetPacket::deserialize(client);
+            if (abortall)
+                return;
+
+            lock_guard<mutex> guard(coarselock);
+            if (abortall)
+                return;
 
             // Unauthenticated packets
             if (packet.type == NetPacketType::GetPk)

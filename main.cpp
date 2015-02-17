@@ -386,7 +386,7 @@ int main(int argc, char* argv[])
                                 return it->mtime < re.mtime;
                         });
                         cout << "Need to download "<<diff.size()<<" files"<<endl;
-
+                        int inFlight = 0;
                         vector<char> folderPathData = ::serialize(folderpath);
                         for (entry e : diff)
                         {
@@ -395,14 +395,22 @@ int main(int argc, char* argv[])
                             vectorAppend(request.data, ::serialize(e.path));
                             Crypto::encryptPacket(request, server, node.getPk());
                             sock.send(request);
-                            NetPacket reply = sock.recvPacket();
-                            Crypto::decryptPacket(reply, server, node.getPk());
-                            if (reply.type != NetPacketType::DownloadArchiveFile)
+                            inFlight++;
+
+                            // Check reply
+                            while (inFlight && (inFlight >= maxPacketsInFlight
+                                                || sock.isPacketAvailable()))
                             {
-                                cout << "Download failed\n";
-                                continue;
+                                NetPacket reply = sock.recvPacket();
+                                Crypto::decryptPacket(reply, server, node.getPk());
+                                if (reply.type != NetPacketType::DownloadArchiveFile)
+                                {
+                                    cout << "Download failed\n";
+                                    continue;
+                                }
+                                lfolder->writeArchiveFile(reply.data, server, node.getPk());
+                                inFlight--;
                             }
-                            lfolder->writeArchiveFile(reply.data, server, node.getPk());
                         }
                     }
 

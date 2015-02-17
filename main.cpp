@@ -401,6 +401,7 @@ int main(int argc, char* argv[])
                             while (inFlight && (inFlight >= maxPacketsInFlight
                                                 || sock.isPacketAvailable()))
                             {
+                                inFlight--;
                                 NetPacket reply = sock.recvPacket();
                                 Crypto::decryptPacket(reply, server, node.getPk());
                                 if (reply.type != NetPacketType::DownloadArchiveFile)
@@ -409,7 +410,6 @@ int main(int argc, char* argv[])
                                     continue;
                                 }
                                 lfolder->writeArchiveFile(reply.data, server, node.getPk());
-                                inFlight--;
                             }
                         }
                     }
@@ -477,6 +477,7 @@ int main(int argc, char* argv[])
                         while (inFlight && (inFlight >= maxPacketsInFlight
                                             || sock.isPacketAvailable()))
                         {
+                            inFlight--;
                             NetPacket reply = sock.recvPacket();
                             Crypto::decryptPacket(reply, server, node.getPk());
                             if (reply.type != NetPacketType::UploadArchiveFile)
@@ -484,7 +485,6 @@ int main(int argc, char* argv[])
                                 cout << "Upload failed\n";
                                 continue;
                             }
-                            inFlight--;
                         }
                     }
                 }

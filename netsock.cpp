@@ -169,24 +169,28 @@ bool NetSock::isShutdown()
 
 bool NetSock::isPacketAvailable() const
 {
-    /// Read vuint packet size from socket
-    unsigned char num3;
-    size_t size = 0;
-    int num2 = 0;
-    unsigned i=0;
-    do
-    {
-        if (bytesAvailable() < i+1)
-            return false;
-        num3 = peekByte(); i++;
-        size |= (num3 & 0x7f) << num2;
-        num2 += 7;
-    } while ((num3 & 0x80) != 0);
+    try {
+        /// Read vuint packet size from socket
+        unsigned char num3;
+        size_t size = 0;
+        int num2 = 0;
+        unsigned i=0;
+        do
+        {
+            if (bytesAvailable() < i+1)
+                return false;
+            num3 = peekByte(); i++;
+            size |= (num3 & 0x7f) << num2;
+            num2 += 7;
+        } while ((num3 & 0x80) != 0);
 
-    if (bytesAvailable() < i+size)
+        if (bytesAvailable() < i+size)
+            return false;
+        else
+            return true;
+    } catch(...) {
         return false;
-    else
-        return true;
+    }
 }
 
 size_t NetSock::bytesAvailable() const
@@ -201,7 +205,7 @@ size_t NetSock::bytesAvailable() const
 uint8_t NetSock::peekByte() const
 {
     uint8_t byte;
-    int result = ::recv(sockfd, &byte, 1, MSG_PEEK);
+    int result = ::recv(sockfd, &byte, 1, MSG_PEEK | MSG_DONTWAIT);
     if (result == 0)
         throw std::runtime_error("NetSock::peekByte: Remote host closed connection");
     else if (result < 0)

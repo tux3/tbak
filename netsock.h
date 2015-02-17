@@ -1,6 +1,7 @@
 #ifndef NETSOCK_H
 #define NETSOCK_H
 
+#include <string>
 #include <vector>
 #include <cstdint>
 #include <cstddef>
@@ -27,6 +28,7 @@ public:
     size_t bytesAvailable() const;
 
     bool connect(const NetAddr& addr);
+    bool connect(const std::string& uri);
     bool isConnected();
     bool isShutdown();
     void send(const std::vector<char>& data) const;

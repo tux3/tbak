@@ -52,6 +52,15 @@ bool NetSock::connect(const NetAddr& addr)
     return connected;
 }
 
+bool NetSock::connect(const std::string& uri)
+{
+    try {
+        return connect(NetAddr{uri});
+    } catch (...) {
+        return false;
+    }
+}
+
 bool NetSock::isConnected()
 {
     return connected;

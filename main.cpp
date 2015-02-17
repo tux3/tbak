@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
             {
                 Server server(serverConfigPath(), ndb, fdb);
                 NetSock sock;
-                if (!sock.connect(NetAddr{node.getUri()}))
+                if (!sock.connect(node.getUri()))
                 {
                     printf("%*s (couldn't connect to node)\n",24,node.getUri().c_str());
                     continue;
@@ -290,7 +290,7 @@ int main(int argc, char* argv[])
                 cout << "Syncing with "<<node.getUri()<<"..."<<endl;
                 Server server(serverConfigPath(), ndb, fdb);
                 NetSock sock;
-                if (!sock.connect(NetAddr{node.getUri()}))
+                if (!sock.connect(node.getUri()))
                 {
                     cout << "Couldn't connect to node "<<node.getUri()<<endl;
                     continue;

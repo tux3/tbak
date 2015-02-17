@@ -28,7 +28,8 @@
 std::vector<char> doubleToData(double num);
 std::vector<char> floatToData(float num);
 float dataToFloat(std::vector<char> data);
-std::vector<char> stringToData(std::string str);
+std::vector<char> stringToData(const std::string &str);
+std::vector<char> stringToData(std::string&& str);
 std::string dataToString(std::vector<char>::const_iterator& data);
 float dataToRangedSingle(float min, float max, int numberOfBits, std::vector<char> data);
 std::vector<char> rangedSingleToData(float value, float min, float max, int numberOfBits);
@@ -49,11 +50,13 @@ std::vector<char> datavecToData(const std::vector<std::vector<char>>& datavec);
 /// Some helpers to cope with the stdlib's hatred of simple things
 
 void vectorAppend(std::vector<char>& dst, const std::vector<char>& src);
+void vectorAppend(std::vector<char>& dst, std::vector<char>&& src);
 
 /// Templates wrappers for a clean interface
 
 template<typename T> T deserializeConsume(std::vector<char>::const_iterator& data);
 template<typename T> std::vector<char> serialize(T arg);
+template<> std::vector<char> serialize(std::string&& arg);
 template<typename T> void serializeAppend(std::vector<char>& dst, T arg)
 {
     vectorAppend(dst, ::serialize(arg));

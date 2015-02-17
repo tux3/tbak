@@ -227,13 +227,12 @@ void Server::handleClient(NetSock& client)
                     {
                         vector<char> data;
                         Folder& folder = fdb.getFolder(fit);
-                        folder.open(true);
+                        folder.open();
                         for (const File& file : folder.getFiles())
                         {
                             ::serializeAppend(data, file.path);
                             ::serializeAppend(data, file.attrs.mtime);
                         }
-                        folder.close();
                         data = Compression::deflate(data);
                         NetPacket packet{NetPacketType::FolderTimeList, data};
                         Crypto::encryptPacket(packet, *this, remoteKey);
@@ -260,7 +259,6 @@ void Server::handleClient(NetSock& client)
                     Folder& folder = fdb.getFolder(fit);
                     folder.open();
                     const std::vector<File>& files = folder.getFiles();
-                    folder.close();
                     bool found = false;
                     const File* file = nullptr;
                     for (const File& f : files)

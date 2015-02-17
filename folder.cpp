@@ -236,6 +236,8 @@ void Folder::createDirectory(const std::string& path) const
 void Folder::open(bool forceupdate)
 {
     lock_guard<std::recursive_mutex> lock(mutex);
+    if (!forceupdate && isOpen)
+        return;
     ifstream f(getFilesDbPath(), ios_base::binary);
     vector<char> data((istreambuf_iterator<char>(f)), istreambuf_iterator<char>());
     if (f.is_open())
@@ -376,7 +378,6 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
     }
     if (!found)
         files.push_back(fmeta);
-    close();
 }
 
 std::string Folder::normalizePath(const std::string& folder)

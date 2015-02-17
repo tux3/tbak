@@ -64,9 +64,10 @@ float dataToFloat(std::vector<char> data)
 }
 
 // Converts a string into PNet string data
-std::vector<char> stringToData(std::string str)
+std::vector<char> stringToData(const std::string& str)
 {
     std::vector<char> data(8,0);
+    data.reserve(8+str.size());
     // Write the size in a Uint of variable lenght (8-32 bits)
     int i=0;
     uint num1 = (uint)str.size();
@@ -78,6 +79,24 @@ std::vector<char> stringToData(std::string str)
     data[i]=num1;
     data.resize(i+1);
     data.insert(end(data), begin(str), end(str));
+    return data;
+}
+
+std::vector<char> stringToData(std::string&& str)
+{
+    std::vector<char> data(8,0);
+    data.reserve(8+str.size());
+    // Write the size in a Uint of variable lenght (8-32 bits)
+    int i=0;
+    uint num1 = (uint)str.size();
+    while (num1 >= 0x80)
+    {
+        data[i] = (unsigned char)(num1 | 0x80); i++;
+        num1 = num1 >> 7;
+    }
+    data[i]=num1;
+    data.resize(i+1);
+    data.insert(end(data), make_move_iterator(begin(str)), make_move_iterator(end(str)));
     return data;
 }
 
@@ -378,11 +397,19 @@ void vectorAppend(std::vector<char> &dst, const std::vector<char> &src)
     dst.insert(end(dst), begin(src), end(src));
 }
 
+void vectorAppend(std::vector<char>& dst, std::vector<char>&& src)
+{
+    dst.reserve(dst.size()+src.size());
+    dst.insert(dst.end(), make_move_iterator(src.begin()),
+             make_move_iterator(src.end()));
+    src.shrink_to_fit();
+}
+
 template<> vector<char> serialize<uint8_t>(uint8_t arg) {return uint8ToData(arg);}
 template<> vector<char> serialize<uint16_t>(uint16_t arg) {return uint16ToData(arg);}
 template<> vector<char> serialize<uint32_t>(uint32_t arg) {return uint32ToData(arg);}
 template<> vector<char> serialize<uint64_t>(uint64_t arg) {return uint64ToData(arg);}
-template<> vector<char> serialize<string>(string arg) {return stringToData(arg);}
+template<> vector<char> serialize<string>(string arg) {return stringToData(move(arg));}
 template<> vector<char> serialize<vector<vector<char>>>(vector<vector<char>> arg) {return datavecToData(arg);}
 template<> vector<char> serialize<PublicKey>(PublicKey arg) {return vector<char>(&arg[0],&arg[0]+sizeof(arg));}
 
@@ -401,4 +428,23 @@ template<> PublicKey deserializeConsume<PublicKey>(vector<char>::const_iterator&
     std::copy_n(data, sizeof(r), begin(r));
     data+=sizeof(PublicKey);
     return r;
+}
+template<> void serializeAppend<uint8_t>(std::vector<char>& dst, uint8_t arg)
+{
+    dst.push_back(arg);
+}
+template<> void serializeAppend<uint32_t>(std::vector<char>& dst, uint32_t arg)
+{
+    char* alias = (char*)&arg;
+    dst.insert(end(dst), alias, alias+4);
+}
+template<> void serializeAppend<uint64_t>(std::vector<char>& dst, uint64_t arg)
+{
+    char* alias = (char*)&arg;
+    dst.insert(end(dst), alias, alias+8);
+}
+template<> void serializeAppend<string>(std::vector<char>& dst, string arg)
+{
+    auto v = stringToData(arg);
+    dst.insert(end(dst), make_move_iterator(begin(v)), make_move_iterator(end(v)));
 }

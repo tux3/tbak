@@ -73,9 +73,15 @@ void NetSock::send(const std::vector<char>& data) const
     {
         int r =::write(sockfd, &data[0], data.size());
         if (r<0)
+        {
+            perror("NetSock::send");
             throw runtime_error("NetSock::send: Write failed");
+        }
         else if ((unsigned)r!=data.size())
+        {
+            perror("NetSock::send");
             throw runtime_error("NetSock::send: Failed to send all data");
+        }
     }
     else
     {

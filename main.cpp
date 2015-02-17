@@ -390,11 +390,20 @@ int main(int argc, char* argv[])
                         vector<char> folderPathData = ::serialize(folderpath);
                         for (entry e : diff)
                         {
+                            if (server.abortall)
+                                return 0;
+
                             cout << "Downloading "<<e.path<<"...\n";
                             NetPacket request{NetPacketType::DownloadArchiveFile, folderPathData};
                             vectorAppend(request.data, ::serialize(e.path));
                             Crypto::encryptPacket(request, server, node.getPk());
+                            try {
                             sock.send(request);
+                            } catch (...) {
+                                cout << "Download failed, couldn't send request\n";
+                                continue;
+                            }
+
                             inFlight++;
 
                             // Check reply
@@ -402,8 +411,20 @@ int main(int argc, char* argv[])
                                                 || sock.isPacketAvailable()))
                             {
                                 inFlight--;
-                                NetPacket reply = sock.recvPacket();
-                                Crypto::decryptPacket(reply, server, node.getPk());
+                                NetPacket reply;
+                                try {
+                                    reply = sock.recvPacket();
+                                    Crypto::decryptPacket(reply, server, node.getPk());
+                                } catch (runtime_error e) {
+                                    if (server.abortall)
+                                        return 0;
+                                    cout <<"Caught unexpected exception ("<<e.what()<<"), quitting"<<endl;
+                                    return 0;
+                                } catch (...) {
+                                    cout << "Caught an unknown exception, quitting"<<endl;
+                                    return -1;
+                                }
+
                                 if (reply.type != NetPacketType::DownloadArchiveFile)
                                 {
                                     cout << "Download failed\n";
@@ -436,6 +457,8 @@ int main(int argc, char* argv[])
                     int inFlight = 0;
                     for (entry e : diff)
                     {
+                        if (server.abortall)
+                            return 0;
                         cout << "Uploading "<<e.path<<"...\n";
 
                         // Find file
@@ -602,6 +625,9 @@ int main(int argc, char* argv[])
                     vector<char> folderPathData = ::serialize(folderpath);
                     for (entry e : diff)
                     {
+                        if (server.abortall)
+                            return 0;
+
                         cout << "Downloading "<<e.path<<"...\n";
                         NetPacket request{NetPacketType::DownloadArchiveFile, folderPathData};
                         vectorAppend(request.data, ::serialize(e.path));

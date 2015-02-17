@@ -5,6 +5,7 @@
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <cstring>
@@ -155,4 +156,47 @@ bool NetSock::isShutdown()
     fds.events = POLLRDHUP | POLLHUP | POLLIN;
     poll(&fds, 1, 1000);
     return (fds.revents & POLLRDHUP) | (fds.revents & POLLHUP);
+}
+
+bool NetSock::isPacketAvailable() const
+{
+    /// Read vuint packet size from socket
+    unsigned char num3;
+    size_t size = 0;
+    int num2 = 0;
+    unsigned i=0;
+    do
+    {
+        if (bytesAvailable() < i+1)
+            return false;
+        num3 = peekByte(); i++;
+        size |= (num3 & 0x7f) << num2;
+        num2 += 7;
+    } while ((num3 & 0x80) != 0);
+
+    if (bytesAvailable() < i+size)
+        return false;
+    else
+        return true;
+}
+
+size_t NetSock::bytesAvailable() const
+{
+    size_t size;
+    if (ioctl(sockfd, FIONREAD, &size) < 0)
+        throw runtime_error("NetSock::bytesAvailable: ioctl FIONREAD failure");
+
+    return size;
+}
+
+uint8_t NetSock::peekByte() const
+{
+    uint8_t byte;
+    int result = ::recv(sockfd, &byte, 1, MSG_PEEK);
+    if (result == 0)
+        throw std::runtime_error("NetSock::peekByte: Remote host closed connection");
+    else if (result < 0)
+        throw std::runtime_error("NetSock::peekByte: Error reading from socket");
+    else
+        return byte;
 }

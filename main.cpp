@@ -425,7 +425,7 @@ int main(int argc, char* argv[])
                             return it->mtime < le.mtime;
                     });
                     cout << "Need to upload "<<diff.size()<<" files"<<endl;
-                    vector<char> folderPathData = ::serialize(folderpath);
+                    int inFlight = 0;
                     for (entry e : diff)
                     {
                         cout << "Uploading "<<e.path<<"...\n";
@@ -463,12 +463,20 @@ int main(int argc, char* argv[])
                         NetPacket request{NetPacketType::UploadArchiveFile, fdata};
                         Crypto::encryptPacket(request, server, node.getPk());
                         sock.send(request);
-                        NetPacket reply = sock.recvPacket();
-                        Crypto::decryptPacket(reply, server, node.getPk());
-                        if (reply.type != NetPacketType::UploadArchiveFile)
+                        inFlight++;
+
+                        // Check reply
+                        while (inFlight && (inFlight >= maxPacketsInFlight
+                                            || sock.isPacketAvailable()))
                         {
-                            cout << "Upload failed\n";
-                            continue;
+                            NetPacket reply = sock.recvPacket();
+                            Crypto::decryptPacket(reply, server, node.getPk());
+                            if (reply.type != NetPacketType::UploadArchiveFile)
+                            {
+                                cout << "Upload failed\n";
+                                continue;
+                            }
+                            inFlight--;
                         }
                     }
                 }

@@ -11,4 +11,6 @@ const std::string& serverConfigPath();
 extern const int PORT_NUMBER;
 extern const char* PORT_NUMBER_STR;
 
+extern const int maxPacketsInFlight;
+
 #endif // SETTINGS_H

@@ -252,6 +252,7 @@ void Server::handleClient(NetSock& client)
                     if (fit == end(folders))
                     {
                         client.send({NetPacketType::Abort});
+                        cout << "Requested folder not found, sending Abort"<<endl;
                         break;
                     }
 
@@ -273,7 +274,8 @@ void Server::handleClient(NetSock& client)
                     if (!found)
                     {
                         client.send({NetPacketType::Abort});
-                        break;
+                        cout << "Requested file not found, sending Abort"<<endl;
+                        continue;
                     }
                     vector<char> fdata;
 
@@ -315,6 +317,7 @@ void Server::handleClient(NetSock& client)
                     if (fit == end(folders))
                     {
                         client.send({NetPacketType::Abort});
+                        cout << "Requested folder not found, sending Abort"<<endl;
                         break;
                     }
 

@@ -118,7 +118,7 @@ std::string dataToString(std::vector<char>::const_iterator& data)
     if (!strlen)
         return std::string{};
 
-    auto v = std::vector<char>(data+i, data+strlen+1); // Remove the strlen and truncate
+    auto v = std::vector<char>(data+i, data+strlen+i); // Remove the strlen and truncate
     data += i+strlen;
     return std::string(begin(v), end(v));
 }

@@ -328,6 +328,31 @@ void Server::handleClient(NetSock& client)
                     fdb.getFolder(fit).writeArchiveFile(data, *this, remoteKey);
                     client.send({NetPacketType::UploadArchiveFile});
                 }
+                else if (packet.type == NetPacketType::DeleteArchiveFile)
+                {
+                    auto pit = packet.data.cbegin();
+                    string folderpath = ::deserializeConsume<string>(pit);
+                    string filepath = ::deserializeConsume<string>(pit);
+
+                    // Find folder
+                    const vector<Folder>& folders = fdb.getFolders();
+                    auto fit = find_if(begin(folders), end(folders), [&folderpath](const Folder& f)
+                    {
+                        return f.getPath()==folderpath && f.getType() == FolderType::Archive;
+                    });
+                    if (fit == end(folders))
+                    {
+                        client.send({NetPacketType::Abort});
+                        cout << "Requested folder not found, sending Abort"<<endl;
+                        break;
+                    }
+
+                    // Remove file
+                    Folder& folder = fdb.getFolder(fit);
+                    folder.open();
+                    folder.removeArchiveFile(filepath);
+                    client.send({NetPacketType::DeleteArchiveFile});
+                }
                 else
                 {
                     cerr << "Unknown packet of type "<<(int)packet.type<<" with size "<<packet.data.size()<<" received"<<endl;

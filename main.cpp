@@ -438,6 +438,70 @@ int main(int argc, char* argv[])
                     lfolder->close();
                 }
 
+                // Remove remote files that don't exist on our source
+                if (lfolder->getType() == FolderType::Source
+                    && rfolder->getType() == FolderType::Archive)
+                {
+                    /// TODO: Sort this by path and use set_difference
+                    vector<entry> diff;
+                    copy_if(begin(rEntries), end(rEntries), back_inserter(diff), [&lEntries](const entry& re)
+                    {
+                        auto it = find_if(begin(lEntries), end(lEntries), [re](const entry& e)
+                        {
+                            return e.path == re.path;
+                        });
+                        return it == end(lEntries);
+                    });
+
+                    cout << "Need to remove "<<diff.size()<<" remote files"<<endl;
+                    vector<char> fdata = ::serialize(lfolder->getPath());
+                    int inFlight = 0;
+                    for (entry e : diff)
+                    {
+                        if (server.abortall)
+                            return 0;
+                        cout << "Removing "<<e.path<<"...\n";
+
+                        NetPacket request{NetPacketType::DeleteArchiveFile, fdata};
+                        vectorAppend(request.data, ::serialize(e.path));
+                        Crypto::encryptPacket(request, server, node.getPk());
+                        try {
+                        sock.send(request);
+                        } catch (...) {
+                            cout << "Removal failed, couldn't send request\n";
+                            continue;
+                        }
+
+                        inFlight++;
+
+                        // Check reply
+                        while (inFlight && (inFlight >= maxPacketsInFlight
+                                            || sock.isPacketAvailable()))
+                        {
+                            inFlight--;
+                            NetPacket reply;
+                            try {
+                                reply = sock.recvPacket();
+                                Crypto::decryptPacket(reply, server, node.getPk());
+                            } catch (runtime_error e) {
+                                if (server.abortall)
+                                    return 0;
+                                cout <<"Caught unexpected exception ("<<e.what()<<"), quitting"<<endl;
+                                return 0;
+                            } catch (...) {
+                                cout << "Caught an unknown exception, quitting"<<endl;
+                                return -1;
+                            }
+
+                            if (reply.type != NetPacketType::DeleteArchiveFile)
+                            {
+                                cout << "Removal failed\n";
+                                continue;
+                            }
+                        }
+                    }
+                }
+
                 // Upload files that are newer on our side
                 if (rfolder->getType() == FolderType::Archive)
                 {

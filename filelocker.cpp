@@ -9,6 +9,7 @@
 using namespace std;
 
 FileLocker::FileLocker(const string &path)
+    : path{path}
 {
     fd = open(path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP);
     if (fd < 0)
@@ -36,6 +37,12 @@ std::vector<char> FileLocker::readAll() const noexcept
     if (r<0)
         data.clear();
     return data;
+}
+
+bool FileLocker::remove() const noexcept
+{
+    lock_guard<std::mutex> lock(mutex);
+    return std::remove(path.c_str()) == 0;
 }
 
 bool FileLocker::truncate() const noexcept

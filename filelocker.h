@@ -15,6 +15,7 @@ public:
 
     std::vector<char> readAll() const noexcept;
 
+    bool remove() const noexcept;
     bool truncate() const noexcept;
     bool write(const char* data, size_t size) const noexcept;
     bool write(const std::vector<char>& data) const noexcept;
@@ -24,6 +25,7 @@ public:
 private:
     int fd;
     mutable std::mutex mutex;
+    const std::string path;
 };
 
 #endif // FILELOCKER_H

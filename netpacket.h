@@ -19,6 +19,7 @@ enum class NetPacketType : uint8_t
     FolderTimeList, ///< List of file names and last acess time of this folder's files
     DownloadArchiveFile, ///< Fetch file compressed then encrypted-with-source-key from source or archive folder
     UploadArchiveFile, ///< Send file compressed then encrypted-with-source-key from source folder to archive folder
+    DeleteArchiveFile, ///< Requests that the server deletes a file from its archive folder
 };
 
 class NetPacket

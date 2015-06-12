@@ -48,6 +48,8 @@ public:
     void removeData() const; ///< Delete this Folder's Files database and data path
     /// Unserialize and write a downloaded archive file to disk
     void writeArchiveFile(const std::vector<char>& data, const Server& s, const PublicKey& rpk);
+    /// Deletes an archive file, if it exists
+    bool removeArchiveFile(const std::string& path);
 
 private:
     std::vector<std::string> listfiles(const char *name, int level) const; ///< Lists files recursively

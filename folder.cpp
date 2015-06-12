@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <cassert>
+#include <algorithm>
 #include <limits.h>
 
 using namespace std;
@@ -378,6 +379,16 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
     }
     if (!found)
         files.push_back(fmeta);
+}
+
+bool Folder::removeArchiveFile(const std::string& path)
+{
+    string hash = Crypto::sha512str(path);
+    string hashdirPath = getFolderDataPath()+"/"+hash.substr(0,2);
+    string hashfilePath = hashdirPath+"/"+hash.substr(2);
+    files.erase(std::remove_if(begin(files), end(files), [=](const File& f){return f.path==path;}), end(files));
+    FileLocker filel(hashfilePath);
+    return filel.remove();
 }
 
 std::string Folder::normalizePath(const std::string& folder)

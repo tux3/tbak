@@ -99,12 +99,49 @@ void Crypto::decrypt(std::vector<char> &data, const Server& s, const PublicKey &
     data = plaintext;
 }
 
-std::string Crypto::sha512str(std::string str)
+std::vector<unsigned char> Crypto::hash(std::__cxx11::string str)
 {
-    unsigned char h[crypto_hash_BYTES];
-    crypto_hash(h, (const unsigned char *) str.c_str(), str.size());
-    char h_hex[crypto_hash_BYTES * 2 + 1];
-    sodium_bin2hex(h_hex, sizeof h_hex, h, sizeof h);
+    static constexpr int hashlen = 21;
+    std::vector<unsigned char> h(hashlen);
 
-    return std::string(h_hex);
+    crypto_generichash(h.data(), hashlen, (const unsigned char*)str.data(), str.size(), nullptr, 0);
+    return h;
+}
+
+std::string Crypto::toBase64(std::vector<unsigned char> data)
+{
+    static constexpr char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    static constexpr char padding = '=';
+    std::string encodedString;
+    encodedString.reserve(((data.size()/3) + (data.size() % 3 > 0)) * 4);
+    uint32_t temp;
+    auto cursor = data.begin();
+    for(size_t idx = 0; idx < data.size()/3; idx++)
+    {
+        temp  = (*cursor++) << 16; //Convert to big endian
+        temp += (*cursor++) << 8;
+        temp += (*cursor++);
+        encodedString.append(1,charset[(temp & 0x00FC0000) >> 18]);
+        encodedString.append(1,charset[(temp & 0x0003F000) >> 12]);
+        encodedString.append(1,charset[(temp & 0x00000FC0) >> 6 ]);
+        encodedString.append(1,charset[(temp & 0x0000003F)      ]);
+    }
+    switch(data.size() % 3)
+    {
+    case 1:
+        temp  = (*cursor++) << 16; //Convert to big endian
+        encodedString.append(1,charset[(temp & 0x00FC0000) >> 18]);
+        encodedString.append(1,charset[(temp & 0x0003F000) >> 12]);
+        encodedString.append(2,padding);
+        break;
+    case 2:
+        temp  = (*cursor++) << 16; //Convert to big endian
+        temp += (*cursor++) << 8;
+        encodedString.append(1,charset[(temp & 0x00FC0000) >> 18]);
+        encodedString.append(1,charset[(temp & 0x0003F000) >> 12]);
+        encodedString.append(1,charset[(temp & 0x00000FC0) >> 6 ]);
+        encodedString.append(1,padding);
+        break;
+    }
+    return encodedString;
 }

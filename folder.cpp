@@ -29,7 +29,7 @@ Folder::Folder(const std::string& Path)
     path = normalizePath(Path);
     rawSize = actualSize = 0;
 
-    hash = Crypto::sha512str(path);
+    hash = Crypto::toBase64(Crypto::hash(path));
 
     open();
 }
@@ -150,7 +150,7 @@ void Folder::deserialize(const std::vector<char>& data)
     rawSize = deserializeConsume<decltype(rawSize)>(it);
     actualSize = deserializeConsume<decltype(actualSize)>(it);
 
-    hash = Crypto::sha512str(path);
+    hash = Crypto::toBase64(Crypto::hash(path));
 }
 
 std::string Folder::getPath() const
@@ -347,7 +347,7 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
 
     if (type == FolderType::Archive)
     {
-        string newhash = Crypto::sha512str(fmeta.path);
+        string newhash = Crypto::toBase64(Crypto::hash(fmeta.path));
         string hashdirPath = getFolderDataPath()+"/"+newhash.substr(0,2);
         createDirectory(hashdirPath);
 
@@ -383,7 +383,7 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
 
 bool Folder::removeArchiveFile(const std::string& path)
 {
-    string hash = Crypto::sha512str(path);
+    string hash = Crypto::toBase64(Crypto::hash(path));
     string hashdirPath = getFolderDataPath()+"/"+hash.substr(0,2);
     string hashfilePath = hashdirPath+"/"+hash.substr(2);
     files.erase(std::remove_if(begin(files), end(files), [=](const File& f){return f.path==path;}), end(files));

@@ -116,7 +116,7 @@ std::vector<char> File::readAll() const
     }
     else if (parent->getType() == FolderType::Archive)
     {
-        string newhash = Crypto::sha512str(path);
+        string newhash = Crypto::toBase64(Crypto::hash(path));
         fullpath = parent->getFolderDataPath()+"/"+newhash.substr(0,2)+"/"+newhash.substr(2);
     }
     else

@@ -18,7 +18,8 @@ public:
 
     static void genkeys(PublicKey& pk, SecretKey& sk);
     static std::string keyToString(PublicKey key);
-    static std::string sha512str(std::string str);
+    static std::vector<unsigned char> hash(std::string str); ///< Fast 168bit hash
+    static std::string toBase64(std::vector<unsigned char> data);
 
     static void encrypt(std::vector<char> &data, const Server& s, const PublicKey &remoteKey);
     static void decrypt(std::vector<char>& data, const Server& s, const PublicKey &remoteKey);

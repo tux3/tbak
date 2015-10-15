@@ -101,7 +101,7 @@ void Crypto::decrypt(std::vector<char> &data, const Server& s, const PublicKey &
 
 std::vector<unsigned char> Crypto::hash(std::__cxx11::string str)
 {
-    static constexpr int hashlen = 21;
+    static constexpr int hashlen = 18;
     std::vector<unsigned char> h(hashlen);
 
     crypto_generichash(h.data(), hashlen, (const unsigned char*)str.data(), str.size(), nullptr, 0);

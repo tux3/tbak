@@ -19,7 +19,9 @@ SOURCES += main.cpp \
     netsock.cpp \
     server.cpp \
     compression.cpp \
-    filelocker.cpp
+    filelocker.cpp \
+    sighandlers.cpp \
+    commands.cpp
 
 CONFIG += c++11
 
@@ -42,6 +44,8 @@ HEADERS += \
     netsock.h \
     server.h \
     compression.h \
-    filelocker.h
+    filelocker.h \
+    sighandlers.h \
+    commands.h
 
 LIBS += -lsodium -lz

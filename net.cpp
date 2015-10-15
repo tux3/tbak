@@ -12,7 +12,7 @@ Net::Net()
 
 PublicKey Net::getNodePk(NetAddr nodeAddr)
 {
-    PublicKey pk{0};
+    PublicKey pk{{0}};
 
     NetSock node{nodeAddr};
     node.send({NetPacketType::GetPk});

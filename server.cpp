@@ -348,7 +348,7 @@ void Server::handleClient(NetSock& client)
                     }
 
                     // Remove file
-                    cout << "Removal request in "<<folderpath<<" of "<<fmeta.path<<endl;
+                    cout << "Removal request in "<<folderpath<<" of "<<filepath<<endl;
                     Folder& folder = fdb.getFolder(fit);
                     folder.open();
                     folder.removeArchiveFile(filepath);

@@ -23,7 +23,8 @@ SOURCES += main.cpp \
     sighandlers.cpp \
     commands.cpp \
     pathhash.cpp \
-    filetime.cpp
+    filetime.cpp \
+    servercommands.cpp
 
 CONFIG += c++11
 

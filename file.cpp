@@ -23,6 +23,7 @@ File::File(const Folder *parent, const std::string& Path)
        attrs{0,0,0,0}
 {
     path = Path;
+    pathHash = PathHash(path);
     readAttributes();
 }
 

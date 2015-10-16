@@ -40,13 +40,15 @@ File::File(const Folder* parent, std::vector<char>::const_iterator& data)
 
 File& File::operator=(const File& other)
 {
-    lock_guard<std::mutex> lock(mutex);
-    lock_guard<std::mutex> lockother(other.mutex);
+    std::lock(mutex, other.mutex);
+    lock_guard<std::mutex> lock(mutex, adopt_lock);
+    lock_guard<std::mutex> lockother(other.mutex, adopt_lock);
     parent = other.parent;
     path = other.path;
     rawSize = other.rawSize;
     actualSize = other.actualSize;
     attrs = other.attrs;
+    pathHash = other.pathHash;
     return *this;
 }
 
@@ -67,6 +69,36 @@ void File::readAttributes()
     attrs.mode = buf.st_mode;
     rawSize = actualSize = buf.st_size;
     actualSize += metadataSize();
+}
+uint64_t File::getActualSize() const
+{
+    return actualSize;
+}
+
+void File::setActualSize(std::uint64_t newSize)
+{
+    actualSize = newSize;
+}
+
+FileAttr File::getAttrs() const
+{
+    return attrs;
+}
+
+string File::getPath() const
+{
+    assert(parent->getType() == FolderType::Source);
+    return path;
+}
+
+PathHash File::getPathHash() const
+{
+    return pathHash;
+}
+
+uint64_t File::getRawSize() const
+{
+    return rawSize;
 }
 
 vector<char> File::serialize() const

@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdint>
 #include <mutex>
+#include "pathhash.h"
 
 using std::uint8_t;
 using std::uint16_t;
@@ -37,12 +38,20 @@ public:
     std::vector<char> readAll() const;
     size_t metadataSize(); ///< Get the size of the serialized metadata. Slow.
 
+    uint64_t getRawSize() const;
+    uint64_t getActualSize() const;
+    void setActualSize(uint64_t newSize);
+    FileAttr getAttrs() const;
+    std::string getPath() const;
+    PathHash getPathHash() const;
+
 private:
     void readAttributes(); ///< Assumes path is valid
 
-public:
+private:
     const Folder* parent;
-    std::string path; ///< Path of the file relative to it's Folder (the backup folder)
+    std::string path; ///< Path of the file relative to it's Folder, only for source folders
+    PathHash pathHash; ///< Hash of the path, for source and archive folders
     uint64_t rawSize; ///< Size of the uncompressed, raw file itself
     uint64_t actualSize; ///< Size of the file taking compression, metadata, etc into account
     FileAttr attrs; ///< File attributes

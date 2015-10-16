@@ -21,7 +21,9 @@ SOURCES += main.cpp \
     compression.cpp \
     filelocker.cpp \
     sighandlers.cpp \
-    commands.cpp
+    commands.cpp \
+    pathhash.cpp \
+    filetime.cpp
 
 CONFIG += c++11
 
@@ -46,6 +48,8 @@ HEADERS += \
     compression.h \
     filelocker.h \
     sighandlers.h \
-    commands.h
+    commands.h \
+    pathhash.h \
+    filetime.h
 
 LIBS += -lsodium -lz

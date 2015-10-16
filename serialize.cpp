@@ -19,6 +19,7 @@
 #include <algorithm>
 #include "serialize.h"
 #include "crypto.h"
+#include "pathhash.h"
 
 using namespace std;
 
@@ -412,6 +413,7 @@ template<> vector<char> serialize<uint64_t>(uint64_t arg) {return uint64ToData(a
 template<> vector<char> serialize<string>(string arg) {return stringToData(move(arg));}
 template<> vector<char> serialize<vector<vector<char>>>(vector<vector<char>> arg) {return datavecToData(arg);}
 template<> vector<char> serialize<PublicKey>(PublicKey arg) {return vector<char>(&arg[0],&arg[0]+sizeof(arg));}
+template<> vector<char> serialize<PathHash>(PathHash arg) {return arg.serialize();}
 
 template<> uint8_t deserializeConsume<uint8_t>(vector<char>::const_iterator& data) {return dataToUint8(data);}
 template<> uint16_t deserializeConsume<uint16_t>(vector<char>::const_iterator& data) {return dataToUint16(data);}

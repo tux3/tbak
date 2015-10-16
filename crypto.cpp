@@ -110,13 +110,18 @@ std::vector<unsigned char> Crypto::hash(std::string str)
 
 std::string Crypto::toBase64(std::vector<unsigned char> data)
 {
+    return toBase64(data.data(), data.size());
+}
+
+std::string Crypto::toBase64(unsigned char *data, size_t length)
+{
     static constexpr char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
     static constexpr char padding = '=';
     std::string encodedString;
-    encodedString.reserve(((data.size()/3) + (data.size() % 3 > 0)) * 4);
+    encodedString.reserve(((length/3) + (length % 3 > 0)) * 4);
     uint32_t temp;
-    auto cursor = data.begin();
-    for(size_t idx = 0; idx < data.size()/3; idx++)
+    auto cursor = data;
+    for(size_t idx = 0; idx < length/3; idx++)
     {
         temp  = (*cursor++) << 16; //Convert to big endian
         temp += (*cursor++) << 8;
@@ -126,7 +131,7 @@ std::string Crypto::toBase64(std::vector<unsigned char> data)
         encodedString.append(1,charset[(temp & 0x00000FC0) >> 6 ]);
         encodedString.append(1,charset[(temp & 0x0000003F)      ]);
     }
-    switch(data.size() % 3)
+    switch(length % 3)
     {
     case 1:
         temp  = (*cursor++) << 16; //Convert to big endian

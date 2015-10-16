@@ -219,8 +219,8 @@ void Folder::updateSizes()
      rawSize = actualSize = 0;
      for (const File& f : files)
      {
-         rawSize += f.rawSize;
-         actualSize += f.actualSize;
+         rawSize += f.getRawSize();
+         actualSize += f.getActualSize();
      }
 }
 
@@ -343,11 +343,11 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
     //cout << "fmeta has "<<fmeta.rawSize<<" raw bytes, "<<fmeta.actualSize<<" actual bytes, "<<metasize<< " meta bytes and "
     //     <<data.size()-metasize<<" data bytes"<<endl;
 
-    assert(data.size() == fmeta.actualSize);
+    assert(data.size() == fmeta.getActualSize());
 
     if (type == FolderType::Archive)
     {
-        string newhash = Crypto::toBase64(Crypto::hash(fmeta.path));
+        string newhash = fmeta.getPathHash().toBase64();
         string hashdirPath = getFolderDataPath()+"/"+newhash.substr(0,2);
         createDirectory(hashdirPath);
 
@@ -357,12 +357,12 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
     }
     else if (type == FolderType::Source)
     {
-        string abspath = path+"/"+fmeta.path;
+        string abspath = path+"/"+fmeta.getPath();
         createPathTo(abspath);
         vector<char> rawdata(data.begin()+metasize, data.end());
         Crypto::decrypt(rawdata, s, rpk);
         rawdata = Compression::inflate(rawdata);
-        createPathTo(fmeta.path);
+        createPathTo(fmeta.getPath());
         FileLocker filel(abspath);
         filel.overwrite(rawdata.data(), rawdata.size());
     }
@@ -370,7 +370,7 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
     bool found = false;
     for (File& file : files)
     {
-        if (file.path == fmeta.path)
+        if (file.getPathHash() == fmeta.getPathHash())
         {
             found=true;
             file = fmeta;
@@ -383,10 +383,14 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
 
 bool Folder::removeArchiveFile(const std::string& path)
 {
-    string hash = Crypto::toBase64(Crypto::hash(path));
-    string hashdirPath = getFolderDataPath()+"/"+hash.substr(0,2);
-    string hashfilePath = hashdirPath+"/"+hash.substr(2);
-    files.erase(std::remove_if(begin(files), end(files), [=](const File& f){return f.path==path;}), end(files));
+    PathHash hash = PathHash(path);
+    string hash64 = hash.toBase64();
+    string hashdirPath = getFolderDataPath()+"/"+hash64.substr(0,2);
+    string hashfilePath = hashdirPath+"/"+hash64.substr(2);
+    files.erase(std::remove_if(begin(files), end(files), [=](const File& f)
+    {
+        return f.getPathHash()==hash;
+    }), end(files));
     FileLocker filel(hashfilePath);
     return filel.remove();
 }

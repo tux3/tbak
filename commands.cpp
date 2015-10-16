@@ -9,6 +9,7 @@
 #include "net.h"
 #include "serialize.h"
 #include "compression.h"
+#include "filetime.h"
 #include <iostream>
 #include <memory>
 #include <algorithm>
@@ -210,12 +211,7 @@ bool folderSync(const string &path)
     NodeDB ndb(nodeDBPath());
     string folderpath{Folder::normalizePath(path)};
 
-    struct entry {
-        string path;
-        uint64_t mtime;
-        bool operator<(const entry& other){return path<other.path;}
-    };
-    vector<entry> lEntries;
+    vector<FileTime> lEntries;
 
     Folder* lfolder=fdb.getFolder(folderpath);
     if (lfolder)
@@ -223,9 +219,9 @@ bool folderSync(const string &path)
         lfolder->open(true);
         for (const File& file : lfolder->getFiles())
         {
-            entry e;
-            e.path = file.path;
-            e.mtime = file.attrs.mtime;
+            FileTime e;
+            e.hash = file.getPathHash();
+            e.mtime = file.getAttrs().mtime;
             lEntries.push_back(e);
         }
         lfolder->close();
@@ -296,12 +292,12 @@ bool folderSync(const string &path)
         vector<char> rFileTimes = Compression::inflate(reply.data);
         reply.data.clear();
         reply.data.shrink_to_fit();
-        vector<entry> rEntries;
+        vector<FileTime> rEntries;
         auto it = rFileTimes.cbegin();
         while (it != rFileTimes.cend())
         {
-            entry e;
-            e.path = ::deserializeConsume<string>(it);
+            FileTime e;
+            e.hash = ::deserializeConsume<string>(it);
             e.mtime = ::deserializeConsume<uint64_t>(it);
             rEntries.push_back(e);
         }
@@ -319,19 +315,19 @@ bool folderSync(const string &path)
             // Remove files if the remote source removed them
             if (rfolder->getType() == FolderType::Source)
             {
-                vector<entry> diff;
+                vector<FileTime> diff;
                 set_difference(begin(lEntries), end(lEntries), begin(rEntries), end(rEntries),back_inserter(diff));
                 cout << "Need to remove "<<diff.size()<<" files"<<endl;
             }
 
             // Download files that are newer on the remote
             {
-                vector<entry> diff;
-                copy_if(begin(rEntries), end(rEntries), back_inserter(diff), [&lEntries](const entry& re)
+                vector<FileTime> diff;
+                copy_if(begin(rEntries), end(rEntries), back_inserter(diff), [&lEntries](const FileTime& re)
                 {
-                    auto it = find_if(begin(lEntries), end(lEntries), [re](const entry& e)
+                    auto it = find_if(begin(lEntries), end(lEntries), [re](const FileTime& e)
                     {
-                        return e.path == re.path;
+                        return e == re;
                     });
                     if (it == end(lEntries))
                         return true;
@@ -341,14 +337,14 @@ bool folderSync(const string &path)
                 cout << "Need to download "<<diff.size()<<" files"<<endl;
                 int inFlight = 0;
                 vector<char> folderPathData = ::serialize(folderpath);
-                for (entry e : diff)
+                for (FileTime e : diff)
                 {
                     if (server.abortall)
                         return true;
 
-                    cout << "Downloading "<<e.path<<"...\n";
+                    cout << "Downloading "<<e.hash.toBase64()<<"...\n";
                     NetPacket request{NetPacketType::DownloadArchiveFile, folderPathData};
-                    vectorAppend(request.data, ::serialize(e.path));
+                    vectorAppend(request.data, ::serialize(e.hash));
                     Crypto::encryptPacket(request, server, node.getPk());
                     try {
                     sock.send(request);
@@ -396,12 +392,12 @@ bool folderSync(const string &path)
             && rfolder->getType() == FolderType::Archive)
         {
             /// TODO: Sort this by path and use set_difference
-            vector<entry> diff;
-            copy_if(begin(rEntries), end(rEntries), back_inserter(diff), [&lEntries](const entry& re)
+            vector<FileTime> diff;
+            copy_if(begin(rEntries), end(rEntries), back_inserter(diff), [&lEntries](const FileTime& re)
             {
-                auto it = find_if(begin(lEntries), end(lEntries), [re](const entry& e)
+                auto it = find_if(begin(lEntries), end(lEntries), [re](const FileTime& e)
                 {
-                    return e.path == re.path;
+                    return e == re;
                 });
                 return it == end(lEntries);
             });
@@ -409,14 +405,14 @@ bool folderSync(const string &path)
             cout << "Need to remove "<<diff.size()<<" remote files"<<endl;
             vector<char> fdata = ::serialize(lfolder->getPath());
             int inFlight = 0;
-            for (entry e : diff)
+            for (FileTime e : diff)
             {
                 if (server.abortall)
                     return true;
-                cout << "Removing "<<e.path<<"...\n";
+                cout << "Removing "<<e.hash.toBase64()<<"...\n";
 
                 NetPacket request{NetPacketType::DeleteArchiveFile, fdata};
-                vectorAppend(request.data, ::serialize(e.path));
+                vectorAppend(request.data, ::serialize(e.hash));
                 Crypto::encryptPacket(request, server, node.getPk());
                 try {
                 sock.send(request);
@@ -458,12 +454,12 @@ bool folderSync(const string &path)
         // Upload files that are newer on our side
         if (rfolder->getType() == FolderType::Archive)
         {
-            vector<entry> diff;
-            copy_if(begin(lEntries), end(lEntries), back_inserter(diff), [&rEntries](const entry& le)
+            vector<FileTime> diff;
+            copy_if(begin(lEntries), end(lEntries), back_inserter(diff), [&rEntries](const FileTime& le)
             {
-                auto it = find_if(begin(rEntries), end(rEntries), [le](const entry& e)
+                auto it = find_if(begin(rEntries), end(rEntries), [le](const FileTime& e)
                 {
-                    return e.path == le.path;
+                    return e == le;
                 });
                 if (it == end(rEntries))
                     return true;
@@ -472,11 +468,11 @@ bool folderSync(const string &path)
             });
             cout << "Need to upload "<<diff.size()<<" files"<<endl;
             int inFlight = 0;
-            for (entry e : diff)
+            for (FileTime e : diff)
             {
                 if (server.abortall)
                     return true;
-                cout << "Uploading "<<e.path<<"...\n";
+                cout << "Uploading "<<e.hash.toBase64()<<"...\n";
 
                 // Find file
                 const std::vector<File>& files = lfolder->getFiles();
@@ -484,7 +480,7 @@ bool folderSync(const string &path)
                 const File* file = nullptr;
                 for (const File& f : files)
                 {
-                    if (f.path == e.path)
+                    if (f.getPathHash() == e.hash)
                     {
                         file = &f;
                         found = true;
@@ -500,7 +496,7 @@ bool folderSync(const string &path)
                     vector<char> content = file->readAll();
                     content = Compression::deflate(content);
                     Crypto::encrypt(content, server, node.getPk());
-                    archived.actualSize = archived.metadataSize() + content.size();
+                    archived.setActualSize(archived.metadataSize() + content.size());
                     vectorAppend(fdata, archived.serialize());
                     copy(move_iterator<vector<char>::iterator>(begin(content)),
                          move_iterator<vector<char>::iterator>(end(content)),
@@ -538,21 +534,16 @@ bool folderRestore(const string &path)
     NodeDB ndb(nodeDBPath());
     string folderpath{Folder::normalizePath(path)};
 
-    struct entry {
-        string path;
-        uint64_t mtime;
-        bool operator<(const entry& other){return path<other.path;}
-    };
-    vector<entry> lEntries;
+    vector<FileTime> lEntries;
     Folder* lfolder=fdb.getFolder(folderpath);
     if (lfolder && lfolder->getType() == FolderType::Source)
     {
         lfolder->open(true);
         for (const File& file : lfolder->getFiles())
         {
-            entry e;
-            e.path = file.path;
-            e.mtime = file.attrs.mtime;
+            FileTime e;
+            e.hash = file.getPathHash();
+            e.mtime = file.getAttrs().mtime;
             lEntries.push_back(e);
         }
         lfolder->close();
@@ -609,12 +600,12 @@ bool folderRestore(const string &path)
         vector<char> rFileTimes = Compression::inflate(reply.data);
         reply.data.clear();
         reply.data.shrink_to_fit();
-        vector<entry> rEntries;
+        vector<FileTime> rEntries;
         auto it = rFileTimes.cbegin();
         while (it != rFileTimes.cend())
         {
-            entry e;
-            e.path = ::deserializeConsume<string>(it);
+            FileTime e;
+            e.hash = ::deserializeConsume<string>(it);
             e.mtime = ::deserializeConsume<uint64_t>(it);
             rEntries.push_back(e);
         }
@@ -627,12 +618,12 @@ bool folderRestore(const string &path)
         // Restore our local source with the remote archive
         lfolder->open();
         {
-            vector<entry> diff;
-            copy_if(begin(rEntries), end(rEntries), back_inserter(diff), [&lEntries](const entry& re)
+            vector<FileTime> diff;
+            copy_if(begin(rEntries), end(rEntries), back_inserter(diff), [&lEntries](const FileTime& re)
             {
-                auto it = find_if(begin(lEntries), end(lEntries), [re](const entry& e)
+                auto it = find_if(begin(lEntries), end(lEntries), [re](const FileTime& e)
                 {
-                    return e.path == re.path;
+                    return e == re;
                 });
                 if (it == end(lEntries))
                     return true;
@@ -642,14 +633,14 @@ bool folderRestore(const string &path)
             cout << "Need to download "<<diff.size()<<" files"<<endl;
 
             vector<char> folderPathData = ::serialize(folderpath);
-            for (entry e : diff)
+            for (FileTime e : diff)
             {
                 if (server.abortall)
                     return true;
 
-                cout << "Downloading "<<e.path<<"...\n";
+                cout << "Downloading "<<e.hash.toBase64()<<"...\n";
                 NetPacket request{NetPacketType::DownloadArchiveFile, folderPathData};
-                vectorAppend(request.data, ::serialize(e.path));
+                vectorAppend(request.data, ::serialize(e.hash));
                 Crypto::encryptPacket(request, server, node.getPk());
                 sock.send(request);
                 NetPacket reply = sock.recvPacket();

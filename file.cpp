@@ -149,7 +149,7 @@ std::vector<char> File::readAll() const
     }
     else if (parent->getType() == FolderType::Archive)
     {
-        string newhash = Crypto::toBase64(Crypto::hash(path));
+        string newhash = pathHash.toBase64();
         fullpath = parent->getFolderDataPath()+"/"+newhash.substr(0,2)+"/"+newhash.substr(2);
     }
     else

@@ -242,14 +242,14 @@ void Server::handleClient(NetSock& client)
                 else if (packet.type == NetPacketType::DownloadArchiveFile)
                 {
                     auto pit = packet.data.cbegin();
-                    string folderpath = ::deserializeConsume<string>(pit);
-                    string filepath = ::deserializeConsume<string>(pit);
-                    string filepathHash = PathHash(filepath).toBase64();
-                    cout << "Download request in "<<folderpath<<" of "<<filepath<<endl;
+                    string folderPath = ::deserializeConsume<string>(pit);
+                    PathHash filePathHash = ::deserializeConsume<PathHash>(pit);
+                    string filePath = filePathHash.toBase64();
+                    cout << "Download request in "<<folderPath<<" of "<<filePath<<endl;
 
                     // Find folder
                     const vector<Folder>& folders = fdb.getFolders();
-                    auto fit = find_if(begin(folders), end(folders), [&folderpath](const Folder& f){return f.getPath()==folderpath;});
+                    auto fit = find_if(begin(folders), end(folders), [&folderPath](const Folder& f){return f.getPath()==folderPath;});
                     if (fit == end(folders))
                     {
                         client.send({NetPacketType::Abort});
@@ -265,7 +265,7 @@ void Server::handleClient(NetSock& client)
                     const File* file = nullptr;
                     for (const File& f : files)
                     {
-                        if (f.getPathHash() == filepathHash)
+                        if (f.getPathHash() == filePathHash)
                         {
                             file = &f;
                             found = true;
@@ -363,7 +363,7 @@ void Server::handleClient(NetSock& client)
                 }
             }
         }
-        catch (exception e)
+        catch (const exception& e)
         {
             cout << "Server::handleClient: Caught exception ("<<e.what()<<"), returning"<<endl;
             break;

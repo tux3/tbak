@@ -99,7 +99,7 @@ void Crypto::decrypt(std::vector<char> &data, const Server& s, const PublicKey &
     data = plaintext;
 }
 
-std::vector<unsigned char> Crypto::hash(std::__cxx11::string str)
+std::vector<unsigned char> Crypto::hash(std::string str)
 {
     static constexpr int hashlen = 18;
     std::vector<unsigned char> h(hashlen);

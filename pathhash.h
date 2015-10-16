@@ -10,6 +10,7 @@ class PathHash
 public:
     PathHash();
     PathHash(std::string str);
+    PathHash(char* data);
     PathHash(const PathHash& other);
     std::string toBase64();
 

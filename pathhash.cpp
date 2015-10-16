@@ -17,6 +17,11 @@ PathHash::PathHash(std::string str)
     copy(data, data+hashlen, hash);
 }
 
+PathHash::PathHash(char *data)
+{
+    copy(data, data+hashlen, hash);
+}
+
 PathHash::PathHash(const PathHash &other)
 {
     copy(other.hash, other.hash+hashlen, hash);

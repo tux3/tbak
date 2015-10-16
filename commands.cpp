@@ -298,7 +298,7 @@ bool folderSync(const string &path)
         while (it != rFileTimes.cend())
         {
             FileTime e;
-            e.hash = ::deserializeConsume<string>(it);
+            e.hash = ::deserializeConsume<PathHash>(it);
             e.mtime = ::deserializeConsume<uint64_t>(it);
             rEntries.push_back(e);
         }
@@ -473,7 +473,6 @@ bool folderSync(const string &path)
             {
                 if (server.abortall)
                     return true;
-                cout << "Uploading "<<e.hash.toBase64()<<"...\n";
 
                 // Find file
                 const std::vector<File>& files = lfolder->getFiles();
@@ -489,6 +488,7 @@ bool folderSync(const string &path)
                     }
                 }
                 assert(found);
+                cout << "Uploading "<<file->getPath()<<"...\n";
                 vector<char> fdata = ::serialize(lfolder->getPath());
 
                 // Compress and encrypt
@@ -606,7 +606,7 @@ bool folderRestore(const string &path)
         while (it != rFileTimes.cend())
         {
             FileTime e;
-            e.hash = ::deserializeConsume<string>(it);
+            e.hash = ::deserializeConsume<PathHash>(it);
             e.mtime = ::deserializeConsume<uint64_t>(it);
             rEntries.push_back(e);
         }

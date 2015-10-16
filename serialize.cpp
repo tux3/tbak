@@ -431,6 +431,12 @@ template<> PublicKey deserializeConsume<PublicKey>(vector<char>::const_iterator&
     data+=sizeof(PublicKey);
     return r;
 }
+template<> PathHash deserializeConsume<PathHash>(vector<char>::const_iterator& data)
+{
+    PathHash ph(&*data);
+    data+=sizeof(PathHash);
+    return ph;
+}
 template<> void serializeAppend<uint8_t>(std::vector<char>& dst, uint8_t arg)
 {
     dst.push_back(arg);

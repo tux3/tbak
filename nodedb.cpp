@@ -13,6 +13,11 @@ NodeDB::NodeDB(const string &path)
     load();
 }
 
+NodeDB::~NodeDB()
+{
+    save();
+}
+
 void NodeDB::save() const
 {
     file.overwrite(serialize());

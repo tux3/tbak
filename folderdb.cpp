@@ -12,6 +12,11 @@ FolderDB::FolderDB(const string &path)
     load();
 }
 
+FolderDB::~FolderDB()
+{
+    save();
+}
+
 void FolderDB::save() const
 {
     file.overwrite(serialize());

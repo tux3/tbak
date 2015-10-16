@@ -6,15 +6,12 @@
 #include "folder.h"
 #include "filelocker.h"
 
-/// TODO: Store archives in ~/.tbak/<hash of the folder path>
-/// So this way we can always find it in the remote
-/// Also, keep a compiled binary in ~/.tbak/ so clients can find it
-
 /// Maintains a database of Folders
 class FolderDB
 {
 public:
     FolderDB(const std::string& path); ///< Reads serialized data from file
+    ~FolderDB(); ///< Saves automatically
 
     void load();
     void deserialize(const std::vector<char>& data);

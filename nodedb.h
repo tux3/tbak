@@ -11,6 +11,7 @@ class NodeDB
 {
 public:
     NodeDB(const std::string& path);  ///< Reads serialized data from file
+    ~NodeDB(); ///< Saves automatically
 
     void load();
     void deserialize(const std::vector<char>& data);

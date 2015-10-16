@@ -70,6 +70,15 @@ void NodeDB::addNode(const std::string& uri)
     nodes.push_back(Node(uri, pk));
 }
 
+void NodeDB::addNode(const string &uri, const string &pkstr)
+{
+    PublicKey pk = Crypto::stringToKey(pkstr);
+
+    cout << "Adding node with pk "<<Crypto::keyToString(pk)<<endl;
+
+    nodes.push_back(Node(uri, pk));
+}
+
 bool NodeDB::removeNode(const std::string& uri)
 {
     for (unsigned i=0; i<nodes.size(); ++i)

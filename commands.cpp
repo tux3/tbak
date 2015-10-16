@@ -34,8 +34,9 @@ void help()
                  "folder update : Update the files database manually\n"
                  "folder sync : Update and synchronize this folder with other nodes\n"
                  "folder restore : Overwrite this source folder with the node's archives\n"
+                 "node showkey : Show our node's public key\n"
                  "node show : Show the list of storage nodes\n"
-                 "node add : Add a storage node\n"
+                 "node add : Add a storage node by IP, optionally with a given public key\n"
                  "node remove : Remove a storage node\n"
                  "node start : Start running as a server\n"
               << std::flush;
@@ -675,6 +676,12 @@ void nodeAdd(const string &uri)
     ndb.addNode(uri);
 }
 
+void nodeAdd(const string &uri, const string &pk)
+{
+    NodeDB ndb(nodeDBPath());
+    ndb.addNode(uri, pk);
+}
+
 void nodeRemove(const string &uri)
 {
     NodeDB ndb(nodeDBPath());
@@ -691,6 +698,15 @@ bool nodeStart()
     fdb.save();
     ndb.save();
     return r==0;
+}
+
+void nodeShowkey()
+{
+    FolderDB fdb(folderDBPath());
+    NodeDB ndb(nodeDBPath());
+    Server server(serverConfigPath(), ndb, fdb);
+    auto pk = server.getPublicKey();
+    cout << "Our public key is " << Crypto::keyToString(pk)<<endl;
 }
 
 }

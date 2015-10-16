@@ -20,6 +20,7 @@ public:
 
     const std::vector<Node>& getNodes() const;
     void addNode(const std::string& uri);
+    void addNode(const std::string& uri, const std::string& pk);
     bool removeNode(const std::string& uri);
 
 private:

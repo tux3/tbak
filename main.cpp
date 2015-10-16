@@ -123,6 +123,10 @@ int main(int argc, char* argv[])
         {
             nodeShow();
         }
+        else if (subcommand == "showkey")
+        {
+            nodeShowkey();
+        }
         else if (subcommand == "start")
         {
             if (!nodeStart())
@@ -135,7 +139,10 @@ int main(int argc, char* argv[])
         }
         else if (subcommand == "add")
         {
-            nodeAdd(argv[3]);
+            if (argc >= 5)
+                nodeAdd(argv[3], argv[4]);
+            else
+                nodeAdd(argv[3]);
         }
         else if (subcommand == "remove")
         {

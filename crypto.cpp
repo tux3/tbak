@@ -33,6 +33,16 @@ void Crypto::genkeys(PublicKey &pk, SecretKey &sk)
     crypto_box_keypair(&pk[0],&sk[0]);
 }
 
+PublicKey Crypto::stringToKey(std::string str)
+{
+    if (str.size() != crypto_box_PUBLICKEYBYTES*2)
+        throw std::runtime_error("Crypto::stringToKey: Not a valid public key");
+
+    PublicKey pk;
+    sodium_hex2bin(pk.data(), sizeof(pk), str.data(), str.size(), nullptr, nullptr, nullptr);
+    return pk;
+}
+
 std::string Crypto::keyToString(PublicKey key)
 {
     static const char* const lut = "0123456789ABCDEF";

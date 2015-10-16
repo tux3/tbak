@@ -19,7 +19,9 @@ void folderStatus(const std::string& path);
 bool folderSync(const std::string& path);
 bool folderRestore(const std::string& path);
 void nodeShow();
+void nodeShowkey();
 void nodeAdd(const std::string& uri);
+void nodeAdd(const std::string& uri, const std::string& pk);
 void nodeRemove(const std::string& uri);
 bool nodeStart();
 

@@ -18,6 +18,7 @@ public:
 
     static void genkeys(PublicKey& pk, SecretKey& sk);
     static std::string keyToString(PublicKey key);
+    static PublicKey stringToKey(std::string str);
     static std::vector<unsigned char> hash(std::string str);
     static std::string toBase64(std::vector<unsigned char> data);
     static std::string toBase64(unsigned char* data, size_t length);

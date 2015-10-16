@@ -20,8 +20,8 @@ public:
     static std::string keyToString(PublicKey key);
     static PublicKey stringToKey(std::string str);
     static std::vector<unsigned char> hash(std::string str);
-    static std::string toBase64(std::vector<unsigned char> data);
-    static std::string toBase64(unsigned char* data, size_t length);
+    static std::string toBase64(const std::vector<unsigned char>& data);
+    static std::string toBase64(const unsigned char *data, size_t length);
 
     static void encrypt(std::vector<char> &data, const Server& s, const PublicKey &remoteKey);
     static void decrypt(std::vector<char>& data, const Server& s, const PublicKey &remoteKey);

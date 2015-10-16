@@ -433,7 +433,7 @@ template<> PublicKey deserializeConsume<PublicKey>(vector<char>::const_iterator&
 }
 template<> PathHash deserializeConsume<PathHash>(vector<char>::const_iterator& data)
 {
-    PathHash ph(&*data);
+    PathHash ph((uint8_t*)&*data);
     data+=sizeof(PathHash);
     return ph;
 }

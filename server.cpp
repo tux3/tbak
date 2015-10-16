@@ -332,14 +332,15 @@ void Server::handleClient(NetSock& client)
                 else if (packet.type == NetPacketType::DeleteArchiveFile)
                 {
                     auto pit = packet.data.cbegin();
-                    string folderpath = ::deserializeConsume<string>(pit);
-                    string filepath = ::deserializeConsume<string>(pit);
+                    string folderPath = ::deserializeConsume<string>(pit);
+                    PathHash filePathHash = ::deserializeConsume<PathHash>(pit);
+                    string filePath = filePathHash.toBase64();
 
                     // Find folder
                     const vector<Folder>& folders = fdb.getFolders();
-                    auto fit = find_if(begin(folders), end(folders), [&folderpath](const Folder& f)
+                    auto fit = find_if(begin(folders), end(folders), [&folderPath](const Folder& f)
                     {
-                        return f.getPath()==folderpath && f.getType() == FolderType::Archive;
+                        return f.getPath()==folderPath && f.getType() == FolderType::Archive;
                     });
                     if (fit == end(folders))
                     {
@@ -349,10 +350,10 @@ void Server::handleClient(NetSock& client)
                     }
 
                     // Remove file
-                    cout << "Removal request in "<<folderpath<<" of "<<filepath<<endl;
+                    cout << "Removal request in "<<folderPath<<" of "<<filePath<<endl;
                     Folder& folder = fdb.getFolder(fit);
                     folder.open();
-                    folder.removeArchiveFile(filepath);
+                    folder.removeArchiveFile(filePathHash);
                     client.send({NetPacketType::DeleteArchiveFile});
                 }
                 else

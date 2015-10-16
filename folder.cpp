@@ -381,18 +381,23 @@ void Folder::writeArchiveFile(const std::vector<char>& data, const Server &s, co
         files.push_back(fmeta);
 }
 
-bool Folder::removeArchiveFile(const std::string& path)
+bool Folder::removeArchiveFile(const PathHash& pathHash)
 {
-    PathHash hash = PathHash(path);
-    string hash64 = hash.toBase64();
-    string hashdirPath = getFolderDataPath()+"/"+hash64.substr(0,2);
-    string hashfilePath = hashdirPath+"/"+hash64.substr(2);
+    string path = pathHash.toBase64();
+    string hashdirPath = getFolderDataPath()+"/"+path.substr(0,2);
+    string hashfilePath = hashdirPath+"/"+path.substr(2);
     files.erase(std::remove_if(begin(files), end(files), [=](const File& f)
     {
-        return f.getPathHash()==hash;
+        return f.getPathHash()==pathHash;
     }), end(files));
-    FileLocker filel(hashfilePath);
-    return filel.remove();
+    try {
+        FileLocker filel(hashfilePath);
+        return filel.remove();
+    } catch (...)
+    {
+        cout << "Folder::removeArchiveFile: File "<<hashfilePath<<" not found"<<endl;
+        return false;
+    }
 }
 
 std::string Folder::normalizePath(const std::string& folder)

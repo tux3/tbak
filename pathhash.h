@@ -10,9 +10,9 @@ class PathHash
 public:
     PathHash();
     PathHash(std::string str);
-    PathHash(char* data);
+    PathHash(uint8_t* data); ///< Read from serialized form
     PathHash(const PathHash& other);
-    std::string toBase64();
+    std::string toBase64() const;
 
     bool operator==(const PathHash& other) const noexcept;
     bool operator<(const PathHash& other) const noexcept;

@@ -17,7 +17,7 @@ PathHash::PathHash(std::string str)
     copy(data, data+hashlen, hash);
 }
 
-PathHash::PathHash(char *data)
+PathHash::PathHash(uint8_t *data)
 {
     copy(data, data+hashlen, hash);
 }
@@ -27,7 +27,7 @@ PathHash::PathHash(const PathHash &other)
     copy(other.hash, other.hash+hashlen, hash);
 }
 
-std::string PathHash::toBase64()
+std::string PathHash::toBase64() const
 {
     return Crypto::toBase64(hash, hashlen);
 }

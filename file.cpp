@@ -108,7 +108,7 @@ vector<char> File::serialize() const
 
     vector<char> data;
 
-    serializeAppend(data, path);
+    serializeAppend(data, pathHash);
     serializeAppend(data, rawSize);
     serializeAppend(data, actualSize);
     serializeAppend(data, attrs.mtime);
@@ -129,7 +129,7 @@ void File::deserialize(std::vector<char>::const_iterator& it)
 {
     lock_guard<std::mutex> lock(mutex);
 
-    path = deserializeConsume<decltype(path)>(it);
+    pathHash = deserializeConsume<decltype(pathHash)>(it);
     rawSize = deserializeConsume<decltype(rawSize)>(it);
     actualSize = deserializeConsume<decltype(actualSize)>(it);
     attrs.mtime = deserializeConsume<decltype(attrs.mtime)>(it);

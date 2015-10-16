@@ -118,12 +118,12 @@ std::vector<unsigned char> Crypto::hash(std::string str)
     return h;
 }
 
-std::string Crypto::toBase64(std::vector<unsigned char> data)
+std::string Crypto::toBase64(const std::vector<unsigned char> &data)
 {
     return toBase64(data.data(), data.size());
 }
 
-std::string Crypto::toBase64(unsigned char *data, size_t length)
+std::string Crypto::toBase64(const unsigned char *data, size_t length)
 {
     static constexpr char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
     static constexpr char padding = '=';

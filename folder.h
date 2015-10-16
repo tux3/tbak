@@ -49,7 +49,7 @@ public:
     /// Unserialize and write a downloaded archive file to disk
     void writeArchiveFile(const std::vector<char>& data, const Server& s, const PublicKey& rpk);
     /// Deletes an archive file, if it exists
-    bool removeArchiveFile(const std::string& path);
+    bool removeArchiveFile(const PathHash &pathHash);
 
 private:
     std::vector<std::string> listfiles(const char *name, int level) const; ///< Lists files recursively

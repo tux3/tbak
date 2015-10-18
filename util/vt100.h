@@ -2,11 +2,88 @@
 #define VT100_H
 
 #include <string>
+#include <iostream>
 
 namespace vt100
 {
 
-static constexpr char CLEARLINE[] = "\033[2K\r";
+struct MANIPULATOR
+{
+    MANIPULATOR() : s{'\033', '['} {}
+    operator char*() {return &s[0];}
+    char s[6];
+};
+
+struct MOVEUP : public MANIPULATOR
+{
+    MOVEUP(int n)
+    {
+        s[2] = (char)('0'+n);
+        s[3] = 'A';
+        if (!n)
+            s[0] = 0;
+    }
+};
+
+struct MOVEDOWN : public MANIPULATOR
+{
+    MOVEDOWN(int n)
+    {
+        s[2] = (char)('0'+n);
+        s[3] = 'B';
+        if (!n)
+            s[0] = 0;
+    }
+};
+
+struct MOVEBACK : public MANIPULATOR
+{
+    MOVEBACK(int n)
+    {
+        s[2] = (char)('0'+n);
+        s[3] = 'D';
+        if (!n)
+            s[0] = 0;
+    }
+};
+
+struct CLEARLINE : public MANIPULATOR
+{
+    CLEARLINE()
+    {
+        s[2] = '2';
+        s[3] = 'K';
+        s[4] = '\r';
+    }
+};
+
+struct STYLE_RESET : public MANIPULATOR
+{
+    STYLE_RESET()
+    {
+        s[2] = '0';
+        s[3] = 'm';
+    }
+};
+
+struct STYLE_ACTIVE : public MANIPULATOR
+{
+    STYLE_ACTIVE()
+    {
+        s[2] = '1';
+        s[3] = 'm';
+    }
+};
+
+struct STYLE_ERROR : public MANIPULATOR
+{
+    STYLE_ERROR()
+    {
+        s[2] = '3';
+        s[3] = '1';
+        s[4] = 'm';
+    }
+};
 
 }
 #endif // VT100_H

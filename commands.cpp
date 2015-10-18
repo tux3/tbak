@@ -12,6 +12,7 @@
 #include "filetime.h"
 #include "util/pathtools.h"
 #include "util/vt100.h"
+#include "threadedworker.h"
 #include <iostream>
 #include <memory>
 #include <algorithm>
@@ -133,7 +134,7 @@ bool folderPush(const string &path)
     cout << "Building list of local files..."<<flush;
     vector<SourceFile> lEntries = src->getSourceFiles();
     sort(begin(lEntries), end(lEntries));
-    cout << vt100::CLEARLINE << "Found "<<lEntries.size()<<" local files"<<endl;
+    cout << vt100::CLEARLINE() << "Found "<<lEntries.size()<<" local files"<<endl;
 
     // Push to all the nodes
     Server server(serverConfigPath(), ndb, fdb);
@@ -208,29 +209,12 @@ bool folderPush(const string &path)
             deldiff.insert(deldiff.end(), rit, rend);
         }
 
-        cout <<vt100::CLEARLINE<<"Need to upload "<<updiff.size()
+        cout <<vt100::CLEARLINE()<<"Need to upload "<<updiff.size()
             <<" files and delete "<<deldiff.size()<<" remote files"<<endl;
 
-        for (const SourceFile& file : updiff)
-        {
-            cout << "Uploading "<<file.getPath()<<" ("
-                 <<humanReadableSize(file.getRawSize())<<')'<<endl;
-            if (!node.uploadFile(sock, server, sourcePathHash, file))
-            {
-                cout << "Failed to upload "<<file.getPath()<<endl;
-                continue;
-            }
-        }
-
-        for (const FileTime& file : deldiff)
-        {
-            cout << "Deleting remote file "<<file.hash.toBase64()<<endl;
-            if (!node.deleteFile(sock, server, sourcePathHash, file.hash))
-            {
-                cout << "Failed to delete "<<file.hash.toBase64()<<endl;
-                continue;
-            }
-        }
+        ThreadedWorker worker(sock, server, node);
+        worker.uploadFiles(sourcePathHash, updiff);
+        worker.deleteFiles(sourcePathHash, deldiff);
     }
     return true;
 }
@@ -293,7 +277,7 @@ bool folderRestore(const string &path)
     cout << "Building list of local files..."<<flush;
     vector<SourceFile> lEntries = src->getSourceFiles();
     sort(begin(lEntries), end(lEntries));
-    cout << vt100::CLEARLINE << "Found "<<lEntries.size()<<" local files"<<endl;
+    cout << vt100::CLEARLINE() << "Found "<<lEntries.size()<<" local files"<<endl;
 
     // Push to all the nodes
     Server server(serverConfigPath(), ndb, fdb);
@@ -352,7 +336,7 @@ bool folderRestore(const string &path)
             downdiff.insert(downdiff.end(), rit, rend);
         }
 
-        cout <<vt100::CLEARLINE<<"Need to download "<<downdiff.size()<<" files"<<endl;
+        cout <<vt100::CLEARLINE()<<"Need to download "<<downdiff.size()<<" files"<<endl;
 
         for (const FileTime& file : downdiff)
         {
@@ -370,7 +354,7 @@ bool folderRestore(const string &path)
                 filePath = ArchiveFile::deserializePath(it);
             }
 
-            cout << vt100::CLEARLINE << "Downloading file "<<filePath
+            cout << vt100::CLEARLINE() << "Downloading file "<<filePath
                  <<" ("<<humanReadableSize(fileSize)<<")..."<<endl;
             vector<char> data = node.downloadFile(sock, server, sourcePathHash, file.hash);
             uint64_t mtime;

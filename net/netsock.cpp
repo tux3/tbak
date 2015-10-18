@@ -24,7 +24,8 @@ NetSock::NetSock()
 NetSock::NetSock(const NetAddr& addr)
     : NetSock()
 {
-    connect(addr);
+    if (!connect(addr))
+        throw runtime_error("Failed to connect");
 }
 
 NetSock::NetSock(int sockfd, bool connected)
@@ -44,6 +45,14 @@ NetSock::~NetSock()
 {
     //cout << "Socket "<<sockfd <<" closed"<<endl;
     close(sockfd);
+}
+
+NetSock& NetSock::operator=(NetSock&& other)
+{
+    sockfd = other.sockfd;
+    connected = other.connected;
+    other.connected = false;
+    other.sockfd = -1;
 }
 
 bool NetSock::connect(const NetAddr& addr)

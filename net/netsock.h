@@ -19,6 +19,7 @@ public:
     NetSock(const NetAddr& addr); ///< Constructs a socket and connect to this address
     NetSock(NetSock&& other);
     ~NetSock();
+    NetSock& operator=(NetSock&& other);
 
     bool listen();
     NetSock accept();

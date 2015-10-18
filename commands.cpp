@@ -93,11 +93,18 @@ bool folderAddArchive(const string &path)
     string folderpath{normalizePath(path)};
     PathHash pathHash{folderpath};
 
+    Server server(serverConfigPath(), ndb, fdb);
     const vector<Node>& nodes = ndb.getNodes();
     for (const Node& node : nodes)
     {
-        Server server(serverConfigPath(), ndb, fdb);
-        NetSock sock(NetAddr{node.getUri()});
+        NetSock sock;
+        try {
+            NetSock sockTry(NetAddr{node.getUri()});
+            sock = move(sockTry);
+        } catch (const runtime_error& e) {
+            cout << "Failed to connect to node "<<node.getUri()<<endl;
+            continue;
+        }
         if (!Net::sendAuth(sock, server))
         {
             cerr << "Couldn't authenticate with that node"<<endl;
@@ -141,7 +148,15 @@ bool folderPush(const string &path)
     const vector<Node>& nodes = ndb.getNodes();
     for (const Node& node : nodes)
     {
-        NetSock sock(NetAddr{node.getUri()});
+        NetSock sock;
+        try {
+            NetSock sockTry(NetAddr{node.getUri()});
+            sock = move(sockTry);
+        } catch (const runtime_error& e) {
+            cout << "Failed to connect to node "<<node.getUri()<<endl;
+            continue;
+        }
+
         if (!Net::sendAuth(sock, server))
         {
             cout << "Couldn't authenticate with node "<<node.getUri()<<endl;
@@ -227,11 +242,18 @@ void folderStatus(const string &path)
     string folderPath{normalizePath(path)};
     PathHash folderPathHash{folderPath};
 
+    Server server(serverConfigPath(), ndb, fdb);
     const vector<Node>& nodes = ndb.getNodes();
     for (const Node& node : nodes)
     {
-        Server server(serverConfigPath(), ndb, fdb);
         NetSock sock;
+        try {
+            NetSock sockTry(NetAddr{node.getUri()});
+            sock = move(sockTry);
+        } catch (const runtime_error& e) {
+            cout << "Failed to connect to node "<<node.getUri()<<endl;
+            continue;
+        }
         if (!sock.connect(node.getUri()))
         {
             printf("%*s (couldn't connect to node)\n",24,node.getUri().c_str());
@@ -284,7 +306,14 @@ bool folderRestore(const string &path)
     const vector<Node>& nodes = ndb.getNodes();
     for (const Node& node : nodes)
     {
-        NetSock sock(NetAddr{node.getUri()});
+        NetSock sock;
+        try {
+            NetSock sockTry(NetAddr{node.getUri()});
+            sock = move(sockTry);
+        } catch (const runtime_error& e) {
+            cout << "Failed to connect to node "<<node.getUri()<<endl;
+            continue;
+        }
         if (!Net::sendAuth(sock, server))
         {
             cout << "Couldn't authenticate with node "<<node.getUri()<<endl;

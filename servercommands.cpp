@@ -16,6 +16,8 @@ void Server::cmdGetPk(NetSock &client)
     client.send(NetPacket(NetPacket::GetPk, ::serialize(pk)));
 }
 
+#include <cstring>
+
 bool Server::cmdAuth(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
 {
     if (packet.data.size() == sizeof(PublicKey))
@@ -23,7 +25,7 @@ bool Server::cmdAuth(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
         auto nodes = ndb.getNodes();
         for (const Node& node : nodes)
         {
-            if (!equal(&packet.data[0], &packet.data[0]+sizeof(PublicKey), &node.getPk()[0]))
+            if (!equal(&packet.data[0], &packet.data[0]+sizeof(PublicKey), (char*)&node.getPk()[0]))
                 continue;
 
             cout << "Auth successful"<<endl;

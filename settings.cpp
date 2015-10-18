@@ -32,5 +32,3 @@ const std::string& serverConfigPath()
 
 const int PORT_NUMBER = 6700;
 const char* PORT_NUMBER_STR = "6700";
-
-const int maxPacketsInFlight=50;

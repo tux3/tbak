@@ -85,7 +85,7 @@ std::vector<FileTime> Node::fetchFolderList(const NetSock &sock, const Server &s
     return rEntries;
 }
 
-bool Node::uploadFile(const NetSock &sock, const Server &s, const PathHash &folder, const SourceFile &file) const
+void Node::uploadFileAsync(const NetSock &sock, const Server &s, const PathHash &folder, const SourceFile &file) const
 {
     vector<char> data;
     serializeAppend(data, folder);
@@ -103,15 +103,15 @@ bool Node::uploadFile(const NetSock &sock, const Server &s, const PathHash &fold
         vectorAppend(fileData, move(contents));
         vectorAppend(data, move(fileData));
     }
-    return sock.secureRequest({NetPacket::UploadArchive, data}, s, pk).type == NetPacket::UploadArchive;
+    sock.sendEncrypted({NetPacket::UploadArchive, data}, s, pk);
 }
 
-bool Node::deleteFile(const NetSock &sock, const Server &s, const PathHash &folder, const PathHash &file) const
+void Node::deleteFileAsync(const NetSock &sock, const Server &s, const PathHash &folder, const PathHash &file) const
 {
     vector<char> data;
     serializeAppend(data, folder);
     serializeAppend(data, file);
-    return sock.secureRequest({NetPacket::DeleteArchive, data}, s, pk).type == NetPacket::DeleteArchive;
+    sock.sendEncrypted({NetPacket::DeleteArchive, data}, s, pk);
 }
 
 std::vector<char> Node::downloadFileMetadata(const NetSock &sock, const Server &s, const PathHash &folder, const PathHash &file) const

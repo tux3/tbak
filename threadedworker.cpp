@@ -29,6 +29,16 @@ void ThreadedWorker::deleteFiles(PathHash folderHash, const vector<FileTime>& de
 
     while (fit != deldiff.cend() || !netQueue.empty())
     {
+        if (sock.isShutdown() || server.abortall)
+        {
+            int queueSize = netQueue.size();
+            cout << MOVEUP(queueSize) << STYLE_ERROR();
+            while (queueSize--)
+                cout << CLEARLINE() << "Operation aborted." << MOVEDOWN(1);
+            cout << STYLE_RESET() << endl;
+            return;
+        }
+
         if (sock.isPacketAvailable())
         {
             NetPacket reply = sock.recvPacket();
@@ -50,10 +60,7 @@ void ThreadedWorker::deleteFiles(PathHash folderHash, const vector<FileTime>& de
             cout << STYLE_ACTIVE();
             cout << '\n' << progress() << "Deleting old remote file (hash "<<fit->hash.toBase64() << ")..."
                  << STYLE_RESET() << flush;
-            vector<char> data;
-            serializeAppend(data, folderHash);
-            serializeAppend(data, fit->hash);
-            sock.sendEncrypted(NetPacket{NetPacket::DeleteArchive, move(data)}, server, node.getPk());
+            node.deleteFileAsync(sock, server, folderHash, fit->hash);
             fit++;
             cur++;
         }
@@ -72,6 +79,16 @@ void ThreadedWorker::uploadFiles(PathHash folderHash, const std::vector<SourceFi
 
     while (fit != updiff.cend() || !netQueue.empty())
     {
+        if (sock.isShutdown() || server.abortall)
+        {
+            int queueSize = netQueue.size();
+            cout << MOVEUP(queueSize-1) << STYLE_ERROR();
+            while (queueSize--)
+                cout << CLEARLINE() << "Operation aborted." << MOVEDOWN(1);
+            cout << STYLE_RESET() << endl;
+            return;
+        }
+
         if (sock.isPacketAvailable())
         {
             NetPacket reply = sock.recvPacket();
@@ -94,23 +111,7 @@ void ThreadedWorker::uploadFiles(PathHash folderHash, const std::vector<SourceFi
             cout << STYLE_ACTIVE();
             cout << '\n' << progress() << "Uploading "<<fit->getPath()<<" ("
                  <<humanReadableSize(fit->getRawSize())<<')'<< STYLE_RESET() << flush;
-            vector<char> data;
-            serializeAppend(data, folderHash);
-            serializeAppend(data, fit->getPathHash());
-            serializeAppend(data, fit->getAttrs().mtime);
-            {
-                // Encrypt the metadata and contents separately, so we can later download the metadata only
-                vector<char> fileData;
-                vector<char> meta = fit->serializeMetadata();
-                Crypto::encrypt(meta, server, server.getPublicKey());
-                vectorAppend(fileData, vuintToData(meta.size()));
-                vectorAppend(fileData, move(meta));
-                vector<char> contents = Compression::deflate(fit->readAll());
-                Crypto::encrypt(contents, server, server.getPublicKey());
-                vectorAppend(fileData, move(contents));
-                vectorAppend(data, move(fileData));
-            }
-            sock.sendEncrypted(NetPacket{NetPacket::UploadArchive, move(data)}, server, node.getPk());
+            node.uploadFileAsync(sock, server, folderHash, *fit);
             fit++;
             cur++;
         }

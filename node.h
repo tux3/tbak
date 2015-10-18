@@ -28,8 +28,8 @@ public:
     // RPC calls
     bool createFolder(const NetSock& sock, const Server& s, const PathHash& folder) const;
     std::vector<FileTime> fetchFolderList(const NetSock& sock, const Server& s, const PathHash& folder) const;
-    bool uploadFile(const NetSock& sock, const Server& s, const PathHash& folder, const SourceFile& file) const;
-    bool deleteFile(const NetSock& sock, const Server& s, const PathHash& folder, const PathHash& file) const;
+    void uploadFileAsync(const NetSock& sock, const Server& s, const PathHash& folder, const SourceFile& file) const;
+    void deleteFileAsync(const NetSock& sock, const Server& s, const PathHash& folder, const PathHash& file) const;
     std::vector<char> downloadFileMetadata(const NetSock& sock, const Server& s,
                                            const PathHash& folder, const PathHash& file) const;
     std::vector<char> downloadFile(const NetSock& sock, const Server& s,

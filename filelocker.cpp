@@ -26,6 +26,23 @@ FileLocker::~FileLocker()
     close(fd);
 }
 
+std::vector<char> FileLocker::read(uint64_t startPos, uint64_t size) const noexcept
+{
+    lock_guard<std::mutex> lock(mutex);
+    size_t fsize = lseek(fd, 0, SEEK_END);
+    if (fsize < startPos)
+        return {};
+    if (fsize < startPos + size)
+        size = startPos - fsize;
+    lseek(fd, startPos, SEEK_SET);
+
+    vector<char> data(size);
+    auto r = ::read(fd, data.data(), size);
+    if (r<0)
+        data.clear();
+    return data;
+}
+
 std::vector<char> FileLocker::readAll() const noexcept
 {
     lock_guard<std::mutex> lock(mutex);
@@ -33,7 +50,7 @@ std::vector<char> FileLocker::readAll() const noexcept
     lseek(fd, 0, SEEK_SET);
 
     vector<char> data(size);
-    auto r = read(fd, data.data(), size);
+    auto r = ::read(fd, data.data(), size);
     if (r<0)
         data.clear();
     return data;

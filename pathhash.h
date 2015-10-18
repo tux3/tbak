@@ -9,8 +9,9 @@ class PathHash
 {
 public:
     PathHash();
-    PathHash(std::string str);
-    PathHash(uint8_t* data); ///< Read from serialized form
+    PathHash(std::string str); ///< Construct from a string to be hashed
+    PathHash(uint8_t* data); ///< Read hash from serialized data
+    PathHash(const char* ambiguous) = delete; ///< Ambigous, string or serialized data?
     PathHash(const PathHash& other);
     std::string toBase64() const;
 
@@ -19,8 +20,9 @@ public:
 
     std::vector<char> serialize() const;
 
-private:
+public:
     static constexpr int hashlen = 18;
+private:
     uint8_t hash[hashlen];
 };
 

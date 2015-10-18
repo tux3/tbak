@@ -4,6 +4,7 @@
 #include "nodedb.h"
 #include "folderdb.h"
 #include "compression.h"
+#include "humanreadable.h"
 #include <iostream>
 #include <algorithm>
 
@@ -12,7 +13,7 @@ using namespace std;
 void Server::cmdGetPk(NetSock &client)
 {
     cout << "Public key requested" << endl;
-    client.send(NetPacket(NetPacketType::GetPk, ::serialize(pk)));
+    client.send(NetPacket(NetPacket::GetPk, ::serialize(pk)));
 }
 
 bool Server::cmdAuth(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
@@ -26,225 +27,220 @@ bool Server::cmdAuth(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
                 continue;
 
             cout << "Auth successful"<<endl;
-            client.send(NetPacket{NetPacketType::Auth});
+            client.send(NetPacket{NetPacket::Auth});
             remoteKey = node.getPk();
             return true;
         }
     }
 
     cout << "Auth failed"<<endl;
-    client.send(NetPacket{NetPacketType::Abort});
+    client.send(NetPacket{NetPacket::Abort});
     return false;
 }
 
 bool Server::cmdFolderStats(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
 {
     auto pit = packet.data.cbegin();
-    string path = ::deserializeConsume<string>(pit);
-    std::cout<<"Folder stats requested for "<<path<<endl;
-    const vector<Folder>& folders = fdb.getFolders();
-    auto fit = find_if(begin(folders), end(folders), [&path](const Folder& f){return f.getPath()==path;});
-    if (fit == end(folders))
+    PathHash pathHash = ::deserializeConsume<PathHash>(pit);
+
+    Archive* archive = fdb.getArchive(pathHash);
+    if (!archive)
     {
-        client.send({NetPacketType::Abort});
+        std::cout<<"cmdFolderStats: No such folder "<<pathHash.toBase64()<<endl;
+        client.send({NetPacket::Abort});
         return false;
     }
-    else
-    {
-        NetPacket packet{NetPacketType::FolderStats, fit->serialize()};
-        Crypto::encryptPacket(packet, *this, remoteKey);
-        client.send(packet);
-    }
+
+    std::cout<<"Folder stats requested for "<<pathHash.toBase64()<<endl;
+    vector<char> data = ::serialize(archive->getActualSize());
+    client.sendEncrypted({NetPacket::FolderStats, data}, *this, remoteKey);
     return true;
 }
 
-bool Server::cmdFolderPush(NetSock& client, NetPacket& packet, PublicKey&)
+bool Server::cmdFolderCreate(NetSock& client, NetPacket& packet, PublicKey&)
 {
-    Folder f(packet.data);
-    std::cout<<"Folder push requested for "<<f.getPath()<<endl;
-
-    f.setType(FolderType::Archive);
-    f.open(true);
-    f.close();
-    fdb.addFolder(f);
-    client.send({NetPacketType::FolderPush});
-    return true;
-}
-
-bool Server::cmdFolderSourceReload(NetSock& client, NetPacket& packet, PublicKey&)
-{
-    auto pit = packet.data.cbegin();
-    string path = ::deserializeConsume<string>(pit);
-    std::cout<<"Folder reload requested for "<<path<<endl;
-    const vector<Folder>& folders = fdb.getFolders();
-    auto fit = find_if(begin(folders), end(folders), [&path](const Folder& f)
+    if (packet.data.size() != PathHash::hashlen)
     {
-        return f.getPath()==path && f.getType() == FolderType::Source;
-    });
-    if (fit == end(folders))
-    {
-        client.send({NetPacketType::Abort});
+        std::cout << "Server::cmdFolderCreate: Received invalid data, aborting"<<endl;
         return false;
     }
-    else
-    {
-        Folder& folder = fdb.getFolder(fit);
-        folder.open(true);
-        folder.close();
-        client.send({NetPacketType::FolderSourceReload});
-    }
+    PathHash pathHash((uint8_t*)packet.data.data());
+    std::cout<<"Folder creation requested for "<<pathHash.toBase64()<<endl;
+    fdb.addArchive(pathHash);
+    client.send({NetPacket::FolderCreate});
     return true;
 }
 
-bool Server::cmdFolderTimeList(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
+bool Server::cmdFolderList(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
 {
-    auto pit = packet.data.cbegin();
-    string path = ::deserializeConsume<string>(pit);
-    std::cout<<"Folder time list requested for "<<path<<endl;
-    const vector<Folder>& folders = fdb.getFolders();
-    auto fit = find_if(begin(folders), end(folders), [&path](const Folder& f){return f.getPath()==path;});
-    if (fit == end(folders))
+    if (packet.data.size() != PathHash::hashlen)
     {
-        client.send({NetPacketType::Abort});
+        std::cout << "Server::cmdFolderList: Received invalid data, aborting"<<endl;
         return false;
     }
-    else
+    PathHash pathHash((uint8_t*)packet.data.data());
+
+    std::cout<<"Folder time list requested for "<<pathHash.toBase64()<<endl;
+    Archive* archive = fdb.getArchive(pathHash);
+    if (!archive)
     {
-        vector<char> data;
-        Folder& folder = fdb.getFolder(fit);
-        folder.open();
-        for (const File& file : folder.getFiles())
-        {
-            ::serializeAppend(data, file.getPathHash());
-            ::serializeAppend(data, file.getAttrs().mtime);
-        }
-        data = Compression::deflate(data);
-        NetPacket packet{NetPacketType::FolderTimeList, data};
-        Crypto::encryptPacket(packet, *this, remoteKey);
-        client.send(packet);
+        client.send({NetPacket::Abort});
+        return false;
     }
+
+    vector<char> data;
+    for (const ArchiveFile& file : archive->getFiles())
+    {
+        ::serializeAppend(data, file.getPathHash());
+        ::serializeAppend(data, file.getMtime());
+    }
+    data = Compression::deflate(data);
+    client.sendEncrypted({NetPacket::FolderList, data}, *this, remoteKey);
     return true;
 }
 
-bool Server::cmdDownloadArchiveFile(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
+bool Server::cmdDownloadArchive(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
 {
+    if (packet.data.size() != 2*PathHash::hashlen)
+    {
+        cout << "Server::cmdDownloadArchive: Received invalid data, aborting"<<endl;
+        return false;
+    }
     auto pit = packet.data.cbegin();
-    string folderPath = ::deserializeConsume<string>(pit);
+    PathHash folderPathHash = ::deserializeConsume<PathHash>(pit);
     PathHash filePathHash = ::deserializeConsume<PathHash>(pit);
-    string filePath = filePathHash.toBase64();
-    cout << "Download request in "<<folderPath<<" of "<<filePath<<endl;
 
     // Find folder
-    const vector<Folder>& folders = fdb.getFolders();
-    auto fit = find_if(begin(folders), end(folders), [&folderPath](const Folder& f){return f.getPath()==folderPath;});
-    if (fit == end(folders))
+    Archive* archive = fdb.getArchive(folderPathHash);
+    if (!archive)
     {
-        client.send({NetPacketType::Abort});
-        cout << "Requested folder not found, sending Abort"<<endl;
+        client.send({NetPacket::Abort});
+        cout << "cmdDownloadArchive: Requested folder "<<folderPathHash.toBase64()<<" not found"<<endl;
         return false;
     }
 
     // Find file
-    Folder& folder = fdb.getFolder(fit);
-    folder.open();
-    const std::vector<File>& files = folder.getFiles();
-    bool found = false;
-    const File* file = nullptr;
-    for (const File& f : files)
+    ArchiveFile* file = archive->getFile(filePathHash);
+    if (!file)
     {
-        if (f.getPathHash() == filePathHash)
-        {
-            file = &f;
-            found = true;
-            break;
-        }
-    }
-    if (!found)
-    {
-        client.send({NetPacketType::Abort});
-        cout << "Requested file not found, sending Abort"<<endl;
+        client.send({NetPacket::Abort});
+        cout << "cmdDownloadArchive: Requested file "<<filePathHash.toBase64()
+             <<" in folder "<<folderPathHash.toBase64()<<" not found"<<endl;
         return false;
     }
-    vector<char> fdata;
 
-    // Compress and encrypt if needed
-    if (folder.getType() == FolderType::Source)
-    {
-        File archived = *file;
-        vector<char> content = file->readAll();
-        content = Compression::deflate(content);
-        Crypto::encrypt(content, *this, remoteKey);
-        archived.setActualSize(archived.metadataSize() + content.size());
-        fdata = archived.serialize();
-        copy(move_iterator<vector<char>::iterator>(begin(content)),
-             move_iterator<vector<char>::iterator>(end(content)),
-             back_inserter(fdata));
-    }
-    else
-    {
-        fdata = file->serialize();
-        vectorAppend(fdata, file->readAll());
-    }
-
-    // Send result
-    NetPacket reply{NetPacketType::DownloadArchiveFile, fdata};
-    Crypto::encryptPacket(reply, *this, remoteKey);
-    client.send(reply);
+    vector<char> fdata = ::serialize(file->getMtime());
+    vectorAppend(fdata, file->readAll());
+    cout << "Download request in "<<folderPathHash.toBase64()<<" of "<<filePathHash.toBase64()
+         <<" ("<<humanReadableSize(file->getActualSize())<<')'<<endl;
+    client.sendEncrypted({NetPacket::DownloadArchive, fdata}, *this, remoteKey);
     return true;
 }
 
-bool Server::cmdUploadArchiveFile(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
+bool Server::cmdDownloadArchiveMetadata(NetSock& client, NetPacket& packet, PublicKey& remoteKey)
 {
+    if (packet.data.size() != 2*PathHash::hashlen)
+    {
+        cout << "Server::cmdDownloadArchiveMetadata: Received invalid data, aborting"<<endl;
+        return false;
+    }
     auto pit = packet.data.cbegin();
-    string folderpath = ::deserializeConsume<string>(pit);
+    PathHash folderPathHash = ::deserializeConsume<PathHash>(pit);
+    PathHash filePathHash = ::deserializeConsume<PathHash>(pit);
 
     // Find folder
-    const vector<Folder>& folders = fdb.getFolders();
-    auto fit = find_if(begin(folders), end(folders), [&folderpath](const Folder& f)
+    Archive* archive = fdb.getArchive(folderPathHash);
+    if (!archive)
     {
-        return f.getPath()==folderpath && f.getType() == FolderType::Archive;
-    });
-    if (fit == end(folders))
+        client.send({NetPacket::Abort});
+        cout << "cmdDownloadArchiveMetadata: Requested folder "<<folderPathHash.toBase64()<<" not found"<<endl;
+        return false;
+    }
+
+    // Find file
+    ArchiveFile* file = archive->getFile(filePathHash);
+    if (!file)
     {
-        client.send({NetPacketType::Abort});
-        cout << "Requested folder not found, sending Abort"<<endl;
+        client.send({NetPacket::Abort});
+        cout << "cmdDownloadArchiveMetadata: Requested file "<<filePathHash.toBase64()
+             <<" in folder "<<folderPathHash.toBase64()<<" not found"<<endl;
+        return false;
+    }
+    vector<char> data = file->readMetadata();
+    if (!data.size())
+    {
+        cout << "cmdDownloadArchiveMetadata: Failed to read from file "<<filePathHash.toBase64()
+             <<" in folder "<<folderPathHash.toBase64()<<endl;
+        client.send({NetPacket::Abort});
+        return false;
+    }
+    cout << "File size is "<<file->getActualSize()<<endl;
+    serializeAppend(data, file->getActualSize());
+    cout << "Metadata download request in "<<folderPathHash.toBase64()<<" of "<<filePathHash.toBase64()<<endl;
+    client.sendEncrypted({NetPacket::DownloadArchiveMetadata, data}, *this, remoteKey);
+    return true;
+}
+
+bool Server::cmdUploadArchive(NetSock& client, NetPacket& packet, PublicKey&)
+{
+    if (packet.data.size() < 2*PathHash::hashlen+sizeof(uint64_t))
+    {
+        cout << "Server::cmdUploadArchive: Received invalid data, aborting"<<endl;
+        return false;
+    }
+    auto pit = packet.data.cbegin();
+    PathHash folderPathHash = ::deserializeConsume<PathHash>(pit);
+    PathHash filePathHash = ::deserializeConsume<PathHash>(pit);
+    uint64_t mtime = ::deserializeConsume<uint64_t>(pit);
+
+    // Find folder
+    Archive* a = fdb.getArchive(folderPathHash);
+    if (!a)
+    {
+        cout << "cmdUploadArchive: Folder "<<folderPathHash.toBase64()<<" not found"<<endl;
+        client.send({NetPacket::Abort});
         return false;
     }
 
     vector<char> data(pit, packet.data.cend());
-    auto it = data.cbegin();
-    File fmeta(&*fit, it);
-    cout << "Upload request in "<<folderpath<<" of "<<fmeta.getPathHash().toBase64()<<endl;
-    fdb.getFolder(fit).writeArchiveFile(data, *this, remoteKey);
-    client.send({NetPacketType::UploadArchiveFile});
+    cout << "Upload request in "<<folderPathHash.toBase64()<<" of "<<filePathHash.toBase64()
+         <<" ("<<humanReadableSize(data.size())<<')'<<endl;
+    a->writeArchiveFile(filePathHash, mtime, data);
+    client.send({NetPacket::UploadArchive});
     return true;
 }
 
-bool Server::cmdDeleteArchiveFile(NetSock& client, NetPacket& packet, PublicKey&)
+bool Server::cmdDeleteArchive(NetSock& client, NetPacket& packet, PublicKey&)
 {
+    if (packet.data.size() != 2*PathHash::hashlen)
+    {
+        cout << "Server::cmdDeleteArchive: Received invalid data, aborting"<<endl;
+        return false;
+    }
     auto pit = packet.data.cbegin();
-    string folderPath = ::deserializeConsume<string>(pit);
+    PathHash folderPathHash = ::deserializeConsume<PathHash>(pit);
     PathHash filePathHash = ::deserializeConsume<PathHash>(pit);
-    string filePath = filePathHash.toBase64();
 
     // Find folder
-    const vector<Folder>& folders = fdb.getFolders();
-    auto fit = find_if(begin(folders), end(folders), [&folderPath](const Folder& f)
+    Archive* archive = fdb.getArchive(folderPathHash);
+    if (!archive)
     {
-        return f.getPath()==folderPath && f.getType() == FolderType::Archive;
-    });
-    if (fit == end(folders))
-    {
-        client.send({NetPacketType::Abort});
+        client.send({NetPacket::Abort});
         cout << "Requested folder not found, sending Abort"<<endl;
         return false;
     }
 
     // Remove file
-    cout << "Removal request in "<<folderPath<<" of "<<filePath<<endl;
-    Folder& folder = fdb.getFolder(fit);
-    folder.open();
-    folder.removeArchiveFile(filePathHash);
-    client.send({NetPacketType::DeleteArchiveFile});
-    return true;
+    if (archive->removeArchiveFile(filePathHash))
+    {
+        cout << "Removal request in "<<folderPathHash.toBase64()<<" of "<<filePathHash.toBase64()<<endl;
+        client.send({NetPacket::DeleteArchive});
+        return true;
+    }
+    else
+    {
+        cout << "Failed removal request in "<<folderPathHash.toBase64()<<" of "<<filePathHash.toBase64()
+             <<", file not found"<<endl;
+        return false;
+    }
 }

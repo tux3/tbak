@@ -6,6 +6,11 @@
 #include <array>
 
 #include "crypto.h"
+#include "filetime.h"
+
+class NetSock;
+class Server;
+class SourceFile;
 
 class Node
 {
@@ -19,6 +24,16 @@ public:
     const std::string& getUri() const;
     std::string getPkString() const;
     const PublicKey& getPk() const;
+
+    // RPC calls
+    bool createFolder(const NetSock& sock, const Server& s, const PathHash& folder) const;
+    std::vector<FileTime> fetchFolderList(const NetSock& sock, const Server& s, const PathHash& folder) const;
+    bool uploadFile(const NetSock& sock, const Server& s, const PathHash& folder, const SourceFile& file) const;
+    bool deleteFile(const NetSock& sock, const Server& s, const PathHash& folder, const PathHash& file) const;
+    std::vector<char> downloadFileMetadata(const NetSock& sock, const Server& s,
+                                           const PathHash& folder, const PathHash& file) const;
+    std::vector<char> downloadFile(const NetSock& sock, const Server& s,
+                                   const PathHash& folder, const PathHash& file) const;
 
 private:
     std::string uri;

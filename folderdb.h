@@ -3,7 +3,8 @@
 
 #include <vector>
 #include <string>
-#include "folder.h"
+#include "archive.h"
+#include "source.h"
 #include "filelocker.h"
 
 /// Maintains a database of Folders
@@ -18,18 +19,19 @@ public:
     void save() const;
     std::vector<char> serialize() const;
 
-    Folder* getFolder(const std::string& path);
-    Folder& getFolder(const std::vector<Folder>::const_iterator it);
-    const std::vector<Folder>& getFolders() const;
-    void addFolder(const Folder& folder);
-    void addFolder(const std::string& path);
-    bool removeFolder(const std::string& path, bool archive=true);
+    const std::vector<Source>& getSources() const;
+    const std::vector<Archive>& getArchives() const;
+    Source* getSource(const std::string& path);
+    Archive* getArchive(const PathHash &pathHash);
+    void addSource(const std::string& path);
+    void addArchive(PathHash pathHash);
+    bool removeSource(const std::string& path);
+    bool removeArchive(const PathHash &pathHash);
+    bool removeArchive(const std::string &pathHashStr); ///< Takes a base64 path hash string
 
 private:
-    //std::vector<Folder>& getFolders();
-
-private:
-    std::vector<Folder> folders;
+    std::vector<Archive> archives;
+    std::vector<Source> sources;
     FileLocker file;
 };
 

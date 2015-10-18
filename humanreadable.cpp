@@ -1,4 +1,4 @@
-#include "humanReadable.h"
+#include "humanreadable.h"
 #include <cstdlib>
 
 std::string humanReadableSize(double size)

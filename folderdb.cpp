@@ -1,5 +1,7 @@
 #include "folderdb.h"
 #include "serialize.h"
+#include "pathtools.h"
+#include "settings.h"
 #include <fstream>
 #include <algorithm>
 #include <iostream>
@@ -26,11 +28,15 @@ vector<char> FolderDB::serialize() const
 {
     vector<char> data;
 
-    vector<vector<char>> foldersData;
-    for (const Folder& f : folders)
-        foldersData.push_back(f.serialize());
+    vector<vector<char>> archivesData;
+    for (const Archive& f : archives)
+        archivesData.push_back(f.serialize());
+    vector<vector<char>> sourcesData;
+    for (const Source& f : sources)
+        sourcesData.push_back(::serialize(f.getPath()));
 
-    serializeAppend(data, foldersData);
+    serializeAppend(data, archivesData);
+    serializeAppend(data, sourcesData);
 
     return data;
 }
@@ -42,70 +48,114 @@ void FolderDB::load()
 
 void FolderDB::deserialize(const std::vector<char> &data)
 {
+    createPathTo("/", dataPath()+"archive/");
+
     if (data.empty())
         return;
     auto it = begin(data);
 
-    vector<vector<char>> foldersData = deserializeConsume<decltype(foldersData)>(it);
-    for (const vector<char>& vec : foldersData)
-        folders.push_back(Folder(vec));
+    vector<vector<char>> archivesData = deserializeConsume<decltype(archivesData)>(it);
+    for (const vector<char>& vec : archivesData)
+        archives.emplace_back(vec);
+    vector<vector<char>> sourcesData = deserializeConsume<decltype(sourcesData)>(it);
+    for (const vector<char>& vec : sourcesData)
+    {
+        auto it = vec.begin();
+        sources.emplace_back(::dataToString(it));
+    }
 }
 
-const std::vector<Folder>& FolderDB::getFolders() const
+const std::vector<Source> &FolderDB::getSources() const
 {
-    return folders;
+    return sources;
 }
 
-void FolderDB::addFolder(const Folder& folder)
+const std::vector<Archive>& FolderDB::getArchives() const
 {
-    auto pred = [&folder](const Folder& f){return f.getPath() == folder.getPath();};
-    if (find_if(begin(folders), end(folders), pred) != end(folders))
+    return archives;
+}
+
+Source *FolderDB::getSource(const string &path)
+{
+    auto it = find_if(begin(sources), end(sources), [&path](const Source& s)
+    {
+        return s.getPath() == path;
+    });
+    if (it == end(sources))
+        return nullptr;
+
+    return &*it;
+}
+
+Archive *FolderDB::getArchive(const PathHash &pathHash)
+{
+    auto it = find_if(begin(archives), end(archives), [&pathHash](const Archive& a)
+    {
+        return a.getPathHash() == pathHash;
+    });
+    if (it == end(archives))
+        return nullptr;
+
+    return &*it;
+}
+
+void FolderDB::addArchive(PathHash pathHash)
+{
+    if (any_of(begin(archives), end(archives), [&pathHash](const Archive& a){return a.getPathHash() == pathHash;}))
         return;
 
-    folders.push_back(folder);
+    archives.emplace_back(pathHash);
 }
 
-void FolderDB::addFolder(const std::string& path)
+void FolderDB::addSource(const std::string& path)
 {
-    auto pred = [&path](const Folder& f){return f.getPath() == path;};
-    if (find_if(begin(folders), end(folders), pred) != end(folders))
+    if (any_of(begin(sources), end(sources), [&path](const Source& s){return s.getPath() == path;}))
         return;
 
-    folders.push_back(Folder(path));
+    sources.emplace_back(path);
 }
 
-bool FolderDB::removeFolder(const std::string& path, bool archive)
+bool FolderDB::removeArchive(const PathHash& pathHash)
 {
-    for (unsigned i=0; i<folders.size(); ++i)
+    auto it = find_if(begin(archives), end(archives), [&pathHash](const Archive& a)
     {
-        if (folders[i].getPath() == path)
-        {
-            if (archive != (folders[i].getType() == FolderType::Archive))
-                continue;
-            folders[i].close();
-            folders[i].removeData();
-            folders.erase(begin(folders)+i);
-            return true;
-        }
-    }
-    return false;
-}
-
-Folder* FolderDB::getFolder(const string &path)
-{
-    Folder* folder=nullptr;
-    for (size_t i=0; i<folders.size(); i++)
+        return a.getPathHash() == pathHash;
+    });
+    if (it == end(archives))
     {
-        if (folders[i].getPath() == path)
-        {
-            folder = &folders[i];
-            break;
-        }
+        cout << "FolderDB::removeArchive: Archive "<<pathHash.toBase64()<<" not found"<<endl;
+        return false;
     }
-    return folder;
+
+    it->removeData();
+    archives.erase(it);
+    return true;
 }
 
-Folder& FolderDB::getFolder(const std::vector<Folder>::const_iterator it)
+bool FolderDB::removeArchive(const string &pathHashStr)
 {
-    return *folders.erase(it, it); // Doesn't erase anything (empty range), but removes constness
+    auto it = find_if(begin(archives), end(archives), [&pathHashStr](const Archive& a)
+    {
+        return a.getPathHash().toBase64() == pathHashStr;
+    });
+    if (it == end(archives))
+    {
+        cout << "FolderDB::removeArchive: Archive "<<pathHashStr<<" not found"<<endl;
+        return false;
+    }
+
+    it->removeData();
+    archives.erase(it);
+    return true;
 }
+
+bool FolderDB::removeSource(const std::string& path)
+{
+    size_t size = sources.size();
+    sources.erase(remove_if(begin(sources), end(sources), [&path](const Source& s)
+    {
+        return s.getPath() == path;
+    }), end(sources));
+    return size != sources.size();
+}
+

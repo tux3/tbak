@@ -6,11 +6,8 @@ CONFIG -= qt
 SOURCES += main.cpp \
     nodedb.cpp \
     folderdb.cpp \
-    folder.cpp \
-    file.cpp \
     serialize.cpp \
     settings.cpp \
-    humanReadable.cpp \
     node.cpp \
     net.cpp \
     crypto.cpp \
@@ -24,7 +21,13 @@ SOURCES += main.cpp \
     commands.cpp \
     pathhash.cpp \
     filetime.cpp \
-    servercommands.cpp
+    servercommands.cpp \
+    source.cpp \
+    archive.cpp \
+    sourcefile.cpp \
+    humanreadable.cpp \
+    archivefile.cpp \
+    pathtools.cpp
 
 CONFIG += c++11
 
@@ -34,11 +37,8 @@ qtcAddDeployment()
 HEADERS += \
     nodedb.h \
     folderdb.h \
-    folder.h \
-    file.h \
     serialize.h \
     settings.h \
-    humanReadable.h \
     node.h \
     net.h \
     crypto.h \
@@ -51,6 +51,13 @@ HEADERS += \
     sighandlers.h \
     commands.h \
     pathhash.h \
-    filetime.h
+    filetime.h \
+    source.h \
+    archive.h \
+    sourcefile.h \
+    humanreadable.h \
+    archivefile.h \
+    pathtools.h \
+    vt100.h
 
 LIBS += -lsodium -lz

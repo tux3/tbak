@@ -33,12 +33,12 @@ private:
     void cmdGetPk(NetSock& client);
     bool cmdAuth(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
     bool cmdFolderStats(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
-    bool cmdFolderPush(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
-    bool cmdFolderSourceReload(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
-    bool cmdFolderTimeList(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
-    bool cmdDownloadArchiveFile(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
-    bool cmdUploadArchiveFile(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
-    bool cmdDeleteArchiveFile(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
+    bool cmdFolderCreate(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
+    bool cmdFolderList(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
+    bool cmdDownloadArchive(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
+    bool cmdDownloadArchiveMetadata(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
+    bool cmdUploadArchive(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
+    bool cmdDeleteArchive(NetSock& client, NetPacket& packet, PublicKey& remoteKey);
 
 private:
     NetSock insock;

@@ -13,6 +13,7 @@ public:
     FileLocker(const std::string& path);
     ~FileLocker();
 
+    std::vector<char> read(uint64_t startPos, uint64_t size) const noexcept;
     std::vector<char> readAll() const noexcept;
 
     bool remove() const noexcept;

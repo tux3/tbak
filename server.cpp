@@ -12,6 +12,7 @@
 #include <algorithm>
 
 using namespace std;
+using ::NetPacket;
 
 std::atomic<bool> Server::abortall{false};
 
@@ -118,11 +119,11 @@ void Server::handleClient(NetSock& client)
             NetPacket packet = NetPacket::deserialize(client);
 
             // Unauthenticated packets
-            if (packet.type == NetPacketType::GetPk)
+            if (packet.type == NetPacket::GetPk)
             {
                 cmdGetPk(client);
             }
-            else if (packet.type == NetPacketType::Auth)
+            else if (packet.type == NetPacket::Auth)
             {
                 if (cmdAuth(client, packet, remoteKey))
                     authenticated = true;
@@ -132,52 +133,52 @@ void Server::handleClient(NetSock& client)
             else if (!authenticated)
             {
                 cerr << "Unauthenticated packet of type "<<(int)packet.type<<" with size "<<packet.data.size()<<" received"<<endl;
-                client.send({NetPacketType::Abort});
+                client.send({NetPacket::Abort});
                 break;
             }
             else // Authenticated packets
             {
                 Crypto::decryptPacket(packet, *this, remoteKey);
 
-                if (packet.type == NetPacketType::FolderStats)
+                if (packet.type == NetPacket::FolderStats)
                 {
                     if (!cmdFolderStats(client, packet, remoteKey))
-                        break;
+                        continue;
                 }
-                else if (packet.type == NetPacketType::FolderPush)
+                else if (packet.type == NetPacket::FolderCreate)
                 {
-                    if (!cmdFolderPush(client, packet, remoteKey))
-                        break;
+                    if (!cmdFolderCreate(client, packet, remoteKey))
+                        continue;
                 }
-                else if (packet.type == NetPacketType::FolderSourceReload)
+                else if (packet.type == NetPacket::FolderList)
                 {
-                    if (!cmdFolderSourceReload(client, packet, remoteKey))
-                        break;
+                    if (!cmdFolderList(client, packet, remoteKey))
+                        continue;
                 }
-                else if (packet.type == NetPacketType::FolderTimeList)
+                else if (packet.type == NetPacket::DownloadArchive)
                 {
-                    if (!cmdFolderTimeList(client, packet, remoteKey))
-                        break;
+                    if (!cmdDownloadArchive(client, packet, remoteKey))
+                        continue;
                 }
-                else if (packet.type == NetPacketType::DownloadArchiveFile)
+                else if (packet.type == NetPacket::DownloadArchiveMetadata)
                 {
-                    if (!cmdDownloadArchiveFile(client, packet, remoteKey))
-                        break;
+                    if (!cmdDownloadArchiveMetadata(client, packet, remoteKey))
+                        continue;
                 }
-                else if (packet.type == NetPacketType::UploadArchiveFile)
+                else if (packet.type == NetPacket::UploadArchive)
                 {
-                    if (!cmdUploadArchiveFile(client, packet, remoteKey))
-                        break;
+                    if (!cmdUploadArchive(client, packet, remoteKey))
+                        continue;
                 }
-                else if (packet.type == NetPacketType::DeleteArchiveFile)
+                else if (packet.type == NetPacket::DeleteArchive)
                 {
-                    if (!cmdDeleteArchiveFile(client, packet, remoteKey))
-                        break;
+                    if (!cmdDeleteArchive(client, packet, remoteKey))
+                        continue;
                 }
                 else
                 {
                     cerr << "Unknown packet of type "<<(int)packet.type<<" with size "<<packet.data.size()<<" received"<<endl;
-                    client.send({NetPacketType::Abort});
+                    client.send({NetPacket::Abort});
                 }
             }
         }

@@ -48,7 +48,7 @@ std::vector<char> Compression::inflate(const std::vector<char> in)
             ::inflate(&strm, Z_FINISH);
             int have = chunk - strm.avail_out;
             out.insert(end(out), buf, buf+have);
-        } while (strm.avail_out == 0);
-        inflateEnd (& strm);
-        return out;
+    } while (strm.avail_out == 0);
+    inflateEnd (& strm);
+    return out;
 }

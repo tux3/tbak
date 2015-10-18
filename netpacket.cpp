@@ -1,12 +1,12 @@
 #include "netpacket.h"
 #include "serialize.h"
 
-NetPacket::NetPacket(NetPacketType type)
+NetPacket::NetPacket(Type type)
     : type{type}
 {
 }
 
-NetPacket::NetPacket(NetPacketType type, std::vector<char> data)
+NetPacket::NetPacket(NetPacket::Type type, std::vector<char> data)
     : type{type}, data{data}
 {
 }
@@ -23,7 +23,7 @@ std::vector<char> NetPacket::serialize() const
 NetPacket NetPacket::deserialize(std::vector<char>::const_iterator& data)
 {
     NetPacket packet;
-    packet.type = (NetPacketType)deserializeConsume<uint8_t>(data);
+    packet.type = (NetPacket::Type)deserializeConsume<uint8_t>(data);
     size_t size = dataToVUint(data);
     packet.data.reserve(size);
     packet.data.insert(end(packet.data), data, data+size);
@@ -34,7 +34,7 @@ NetPacket NetPacket::deserialize(std::vector<char>::const_iterator& data)
 NetPacket NetPacket::deserialize(const NetSock& clientsock)
 {
     NetPacket packet;
-    packet.type = (NetPacketType)clientsock.recvByte();
+    packet.type = (NetPacket::Type)clientsock.recvByte();
 
     /// Read vuint packet size from socket
     unsigned char num3;

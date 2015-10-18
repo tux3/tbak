@@ -5,9 +5,11 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
+#include "crypto.h"
 
 class NetAddr;
 class NetPacket;
+class Server;
 
 /// Abstraction of a network socket
 class NetSock
@@ -23,6 +25,7 @@ public:
     std::vector<char> recv(int count = -1) const; ///< Receives data until count are received, or unable to receive more
     uint8_t recvByte() const;
     NetPacket recvPacket() const;
+    NetPacket recvEncryptedPacket(const Server& s, const PublicKey& pk) const; ///< Returns the decrypted packet
     uint8_t peekByte() const;
     bool isPacketAvailable() const;
     size_t bytesAvailable() const;
@@ -31,8 +34,13 @@ public:
     bool connect(const std::string& uri);
     bool isConnected();
     bool isShutdown();
-    void send(const std::vector<char>& data) const;
     void send(const NetPacket& packet) const;
+    void sendEncrypted(NetPacket& packet, const Server& s, const PublicKey& pk) const; ///< Modifies the packet inplace!
+    void sendEncrypted(NetPacket&& packet, const Server& s, const PublicKey& pk) const;
+
+    /// Encrypts packet, sends it, receives a reply and returns it decrypted
+    NetPacket secureRequest(NetPacket& packet, const Server& s, const PublicKey& pk) const;
+    NetPacket secureRequest(NetPacket&& packet, const Server& s, const PublicKey& pk) const;
 
 protected:
     NetSock(int sockfd, bool connected=false);

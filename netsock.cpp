@@ -2,6 +2,7 @@
 #include "netpacket.h"
 #include "netaddr.h"
 #include "settings.h"
+#include "crypto.h"
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -66,32 +67,46 @@ bool NetSock::isConnected()
     return connected;
 }
 
-void NetSock::send(const std::vector<char>& data) const
-{
-    //cout << "Sending "<<data.size() <<" bytes\n";
-    if (connected)
-    {
-        int r =::write(sockfd, &data[0], data.size());
-        if (r<0)
-        {
-            perror("NetSock::send");
-            throw runtime_error("NetSock::send: Write failed");
-        }
-        else if ((unsigned)r!=data.size())
-        {
-            perror("NetSock::send");
-            throw runtime_error("NetSock::send: Failed to send all data");
-        }
-    }
-    else
-    {
-        throw std::runtime_error("NetSock::send: Not connected");
-    }
-}
-
 void NetSock::send(const NetPacket& packet) const
 {
-    send(packet.serialize());
+    std::vector<char> data = packet.serialize();
+    if (!connected)
+        throw std::runtime_error("NetSock::send: Not connected");
+
+    int r = ::write(sockfd, &data[0], data.size());
+    if (r<0)
+    {
+        perror("NetSock::send");
+        throw runtime_error("NetSock::send: Write failed");
+    }
+    else if ((unsigned)r!=data.size())
+    {
+        perror("NetSock::send");
+        throw runtime_error("NetSock::send: Failed to send all data");
+    }
+
+}
+
+void NetSock::sendEncrypted(NetPacket &packet, const Server &s, const PublicKey &pk) const
+{
+    Crypto::encryptPacket(packet, s, pk);
+    send(packet);
+}
+
+void NetSock::sendEncrypted(NetPacket &&packet, const Server &s, const PublicKey &pk) const
+{
+    sendEncrypted(packet, s, pk);
+}
+
+NetPacket NetSock::secureRequest(NetPacket &packet, const Server &s, const PublicKey &pk) const
+{
+    sendEncrypted(packet, s, pk);
+    return recvEncryptedPacket(s, pk);
+}
+
+NetPacket NetSock::secureRequest(NetPacket&& packet, const Server& s, const PublicKey& pk) const
+{
+    return secureRequest(packet, s, pk);
 }
 
 bool NetSock::listen()
@@ -162,6 +177,13 @@ uint8_t NetSock::recvByte() const
 NetPacket NetSock::recvPacket() const
 {
     return NetPacket::deserialize(*this);
+}
+
+NetPacket NetSock::recvEncryptedPacket(const Server& s, const PublicKey& pk) const
+{
+    NetPacket p = NetPacket::deserialize(*this);
+    Crypto::decryptPacket(p, s, pk);
+    return p;
 }
 
 bool NetSock::isShutdown()

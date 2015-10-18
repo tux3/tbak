@@ -8,7 +8,7 @@
 #include "nodedb.h"
 #include "folderdb.h"
 #include "settings.h"
-#include "humanReadable.h"
+#include "humanreadable.h"
 #include "server.h"
 #include "netpacket.h"
 #include "netaddr.h"
@@ -26,7 +26,6 @@ void checkDataDir()
     if (stat(dataPath().c_str(), &buf) < 0)
     {
         mkdir(dataPath().c_str(), S_IRWXU | S_IRGRP | S_IWGRP);
-        mkdir((dataPath()+"/source/").c_str(), S_IRWXU | S_IRGRP | S_IWGRP);
         mkdir((dataPath()+"/archive/").c_str(), S_IRWXU | S_IRGRP | S_IWGRP);
     }
     else if (!S_ISDIR(buf.st_mode))
@@ -96,17 +95,9 @@ int main(int argc, char* argv[])
             if (!folderPush(argv[3]))
                 return EXIT_FAILURE;
         }
-        else if (subcommand == "update")
-        {
-            folderUpdate(argv[3]);
-        }
         else if (subcommand == "status")
         {
             folderStatus(argv[3]);
-        }
-        else if (subcommand == "sync")
-        {
-            folderSync(argv[3]);
         }
         else if (subcommand == "restore")
         {

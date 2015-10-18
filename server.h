@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include "netsock.h"
+#include "net/netsock.h"
 #include "crypto.h"
 #include <atomic>
 

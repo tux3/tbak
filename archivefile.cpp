@@ -1,7 +1,7 @@
 #include "archivefile.h"
 #include "archive.h"
-#include "filelocker.h"
-#include "pathtools.h"
+#include "util/filelocker.h"
+#include "util/pathtools.h"
 #include "serialize.h"
 
 using namespace std;

@@ -2,8 +2,8 @@
 #define NET_H
 
 #include "crypto.h"
-#include "netpacket.h"
-#include "netaddr.h"
+#include "net/netpacket.h"
+#include "net/netaddr.h"
 
 /// Handles low and high level networking
 class Net

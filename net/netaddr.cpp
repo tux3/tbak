@@ -1,4 +1,4 @@
-#include "netaddr.h"
+#include "net/netaddr.h"
 #include "settings.h"
 #include <sys/types.h>
 #include <sys/socket.h>

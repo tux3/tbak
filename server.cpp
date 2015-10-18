@@ -1,6 +1,6 @@
 #include "server.h"
-#include "net.h"
-#include "netpacket.h"
+#include "net/net.h"
+#include "net/netpacket.h"
 #include "settings.h"
 #include "serialize.h"
 #include "nodedb.h"

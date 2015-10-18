@@ -1,6 +1,6 @@
 #include "folderdb.h"
 #include "serialize.h"
-#include "pathtools.h"
+#include "util/pathtools.h"
 #include "settings.h"
 #include <fstream>
 #include <algorithm>

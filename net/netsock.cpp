@@ -1,6 +1,6 @@
-#include "netsock.h"
-#include "netpacket.h"
-#include "netaddr.h"
+#include "net/netsock.h"
+#include "net/netpacket.h"
+#include "net/netaddr.h"
 #include "settings.h"
 #include "crypto.h"
 #include <poll.h>

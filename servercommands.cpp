@@ -1,10 +1,10 @@
 #include "server.h"
-#include "netpacket.h"
+#include "net/netpacket.h"
 #include "serialize.h"
 #include "nodedb.h"
 #include "folderdb.h"
 #include "compression.h"
-#include "humanreadable.h"
+#include "util/humanreadable.h"
 #include <iostream>
 #include <algorithm>
 

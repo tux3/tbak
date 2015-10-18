@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include "node.h"
-#include "filelocker.h"
+#include "util/filelocker.h"
 
 /// Maintains a database of Nodes
 class NodeDB

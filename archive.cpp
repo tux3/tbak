@@ -1,10 +1,10 @@
 #include "archive.h"
 #include "serialize.h"
 #include "settings.h"
-#include "filelocker.h"
+#include "util/filelocker.h"
 #include "crypto.h"
 #include "compression.h"
-#include "pathtools.h"
+#include "util/pathtools.h"
 #include <dirent.h>
 #include <iostream>
 #include <cstring>

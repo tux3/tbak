@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <cstdint>
-#include "netsock.h"
+#include "net/netsock.h"
 
 class NetPacket
 {

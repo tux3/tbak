@@ -1,5 +1,5 @@
-#include "net.h"
-#include "netsock.h"
+#include "net/net.h"
+#include "net/netsock.h"
 #include "server.h"
 #include "serialize.h"
 #include <algorithm>

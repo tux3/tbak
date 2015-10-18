@@ -1,5 +1,5 @@
 #include "source.h"
-#include "pathtools.h"
+#include "util/pathtools.h"
 #include <dirent.h>
 #include <cstring>
 #include <cassert>

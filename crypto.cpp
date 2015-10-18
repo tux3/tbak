@@ -1,6 +1,6 @@
 #include "crypto.h"
 #include "server.h"
-#include "netpacket.h"
+#include "net/netpacket.h"
 #include <unistd.h>
 #include <cstdlib>
 #include <cstring>

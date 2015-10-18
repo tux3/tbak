@@ -5,7 +5,7 @@
 #include <string>
 #include "archive.h"
 #include "source.h"
-#include "filelocker.h"
+#include "util/filelocker.h"
 
 /// Maintains a database of Folders
 class FolderDB

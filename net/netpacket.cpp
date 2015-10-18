@@ -1,4 +1,4 @@
-#include "netpacket.h"
+#include "net/netpacket.h"
 #include "serialize.h"
 
 NetPacket::NetPacket(Type type)

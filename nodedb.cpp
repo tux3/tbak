@@ -1,6 +1,6 @@
 #include "nodedb.h"
 #include "serialize.h"
-#include "net.h"
+#include "net/net.h"
 #include <fstream>
 #include <algorithm>
 #include <iostream>

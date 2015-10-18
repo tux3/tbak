@@ -8,10 +8,9 @@ using namespace std;
 string normalizeFileName(const string& folder, const string& file)
 {
     assert(!folder.empty() && !file.empty());
-    string folderclean = normalizePath(folder);
     string fileclean = file;
     if (file.size() > folder.size()
-            && file.find(folder) == 0)
+            && file.compare(folder) == 0)
     {
         fileclean = fileclean.substr(folder.size()+1);
     }

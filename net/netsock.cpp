@@ -71,7 +71,7 @@ bool NetSock::connect(const std::string& uri)
     }
 }
 
-bool NetSock::isConnected()
+bool NetSock::isConnected() const
 {
     return connected;
 }
@@ -151,9 +151,9 @@ std::vector<char> NetSock::recv(int count) const
     const size_t bufsize = 4096;
     char* buf = new char[bufsize];
     unsigned totalReceived = 0;
-    int result;
 
     do {
+        int result;
         unsigned toReceive;
         if (count == -1)
             toReceive = bufsize;
@@ -197,7 +197,7 @@ NetPacket NetSock::recvEncryptedPacket(const Server& s, const PublicKey& pk) con
     return p;
 }
 
-bool NetSock::isShutdown()
+bool NetSock::isShutdown() const
 {
     pollfd fds;
     fds.fd = sockfd;

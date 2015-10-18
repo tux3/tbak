@@ -33,8 +33,8 @@ public:
 
     bool connect(const NetAddr& addr);
     bool connect(const std::string& uri);
-    bool isConnected();
-    bool isShutdown();
+    bool isConnected() const;
+    bool isShutdown() const;
     void send(const NetPacket& packet) const;
     void sendEncrypted(NetPacket& packet, const Server& s, const PublicKey& pk) const; ///< Modifies the packet inplace!
     void sendEncrypted(NetPacket&& packet, const Server& s, const PublicKey& pk) const;

@@ -36,6 +36,7 @@ SourceFile::SourceFile(const Source* parent, const std::vector<char> &metadata,
     attrs.groupId = ::deserializeConsume<decltype(attrs.groupId)>(mit);
     attrs.mode = ::deserializeConsume<decltype(attrs.mode)>(mit);
     attrs.mtime = mtime;
+    rawSize = data.size();
 
     string fullPath = parent->getPath()+'/'+path;
     createPathTo("/", fullPath);

@@ -15,8 +15,8 @@ class SourceFile;
 class Node
 {
 public:
-    Node(const std::string& uri, PublicKey pk);  ///< Add node with this URI
-    Node(const std::vector<char>& data); ///< Construct from serialized data
+    explicit Node(const std::string& uri, PublicKey pk);  ///< Add node with this URI
+    explicit Node(const std::vector<char>& data); ///< Construct from serialized data
 
     std::vector<char> serialize() const;
     void deserialize(const std::vector<char>& data);

@@ -6,7 +6,7 @@ Compression::Compression()
 
 }
 
-std::vector<char> Compression::deflate(const std::vector<char> in)
+std::vector<char> Compression::deflate(const std::vector<char>& in)
 {
     std::vector<char> out;
     const size_t chunk = chunksize;
@@ -30,7 +30,7 @@ std::vector<char> Compression::deflate(const std::vector<char> in)
     return out;
 }
 
-std::vector<char> Compression::inflate(const std::vector<char> in)
+std::vector<char> Compression::inflate(const std::vector<char>& in)
 {
     std::vector<char> out;
     const size_t chunk = chunksize;

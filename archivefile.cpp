@@ -36,7 +36,7 @@ uint64_t ArchiveFile::getActualSize() const
     return actualSize;
 }
 
-std::vector<char> ArchiveFile::read(uint64_t startPos, uint64_t size)
+std::vector<char> ArchiveFile::read(uint64_t startPos, uint64_t size) const
 {
     string pathHashStr = pathHash.toBase64();
     string fullPath = parent->getFolderDataPath()+'/'+pathHashStr.substr(0,2)+'/'+pathHashStr.substr(2);
@@ -44,7 +44,7 @@ std::vector<char> ArchiveFile::read(uint64_t startPos, uint64_t size)
     return file.read(startPos, size);
 }
 
-std::vector<char> ArchiveFile::readMetadata()
+std::vector<char> ArchiveFile::readMetadata() const
 {
     std::vector<char> meta;
     std::vector<char> msizeData = read(0, sizeof(size_t));

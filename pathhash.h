@@ -8,10 +8,10 @@
 class PathHash
 {
 public:
-    PathHash();
-    PathHash(std::string str); ///< Construct from a string to be hashed
-    PathHash(uint8_t* data); ///< Read hash from serialized data
-    PathHash(const char* ambiguous) = delete; ///< Ambigous, string or serialized data?
+    explicit PathHash();
+    explicit PathHash(std::string str); ///< Construct from a string to be hashed
+    explicit PathHash(uint8_t* data); ///< Read hash from serialized data
+    explicit PathHash(const char* ambiguous) = delete; ///< Ambigous, string or serialized data?
     PathHash(const PathHash& other);
     std::string toBase64() const;
 

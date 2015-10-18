@@ -10,7 +10,7 @@
 class NodeDB
 {
 public:
-    NodeDB(const std::string& path);  ///< Reads serialized data from file
+    explicit NodeDB(const std::string& path);  ///< Reads serialized data from file
     ~NodeDB(); ///< Saves automatically
 
     void load();

@@ -8,7 +8,7 @@
 class Source
 {
 public:
-    Source(std::string path);
+    explicit Source(std::string path);
     std::string getPath() const;
 
     void populateCache() const; ///< Super slow, will recurse through the filesystem!

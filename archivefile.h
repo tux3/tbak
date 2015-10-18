@@ -15,8 +15,8 @@ public:
     uint64_t getMtime() const;
     uint64_t getActualSize() const;
 
-    std::vector<char> read(uint64_t startPos, uint64_t size);
-    std::vector<char> readMetadata();
+    std::vector<char> read(uint64_t startPos, uint64_t size) const;
+    std::vector<char> readMetadata() const;
     std::vector<char> readAll() const;
     void overwrite(uint64_t mtime, const std::vector<char>& data);
 

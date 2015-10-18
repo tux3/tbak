@@ -9,8 +9,8 @@ class Compression
 public:
     Compression();
 
-    static std::vector<char> deflate(const std::vector<char> in);
-    static std::vector<char> inflate(const std::vector<char> in);
+    static std::vector<char> deflate(const std::vector<char>& in);
+    static std::vector<char> inflate(const std::vector<char>& in);
 
 private:
     static const int window = -15;

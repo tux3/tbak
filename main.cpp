@@ -35,22 +35,6 @@ void checkDataDir()
     }
 }
 
-std::string toHex(std::string str)
-{
-    static const char* const lut = "0123456789ABCDEF";
-    size_t len = str.size();
-
-    std::string output;
-    output.reserve(2 * len);
-    for (size_t i = 0; i < len; ++i)
-    {
-        const unsigned char c = str[i];
-        output.push_back(lut[c >> 4]);
-        output.push_back(lut[c & 15]);
-    }
-    return output;
-}
-
 int main(int argc, char* argv[])
 {
     using namespace cmd;

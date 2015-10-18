@@ -254,11 +254,6 @@ void folderStatus(const string &path)
             cout << "Failed to connect to node "<<node.getUri()<<endl;
             continue;
         }
-        if (!sock.connect(node.getUri()))
-        {
-            printf("%*s (couldn't connect to node)\n",24,node.getUri().c_str());
-            continue;
-        }
         if (!Net::sendAuth(sock, server))
         {
             printf("%*s (couldn't authenticate with node)\n",24,node.getUri().c_str());
@@ -438,8 +433,6 @@ bool nodeStart()
     Server server(serverConfigPath(), ndb, fdb);
     int r = server.exec();
     cout << "Server exiting with status "<<r<<endl;
-    fdb.save();
-    ndb.save();
     return r==0;
 }
 

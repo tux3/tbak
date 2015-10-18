@@ -10,7 +10,7 @@
 class FileLocker
 {
 public:
-    FileLocker(const std::string& path);
+    explicit FileLocker(const std::string& path);
     ~FileLocker();
 
     std::vector<char> read(uint64_t startPos, uint64_t size) const noexcept;

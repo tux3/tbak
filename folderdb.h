@@ -11,13 +11,8 @@
 class FolderDB
 {
 public:
-    FolderDB(const std::string& path); ///< Reads serialized data from file
+    explicit FolderDB(const std::string& path); ///< Reads serialized data from file
     ~FolderDB(); ///< Saves automatically
-
-    void load();
-    void deserialize(const std::vector<char>& data);
-    void save() const;
-    std::vector<char> serialize() const;
 
     const std::vector<Source>& getSources() const;
     const std::vector<Archive>& getArchives() const;
@@ -28,6 +23,12 @@ public:
     bool removeSource(const std::string& path);
     bool removeArchive(const PathHash &pathHash);
     bool removeArchive(const std::string &pathHashStr); ///< Takes a base64 path hash string
+
+protected:
+    void load();
+    void save() const;
+    std::vector<char> serialize() const;
+    void deserialize(const std::vector<char>& data);
 
 private:
     std::vector<Archive> archives;

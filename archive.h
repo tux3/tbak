@@ -14,8 +14,8 @@ class Archive
 {
 public:
     Archive(const Archive& other);
-    Archive(PathHash pathHash); ///< Construct an empty archive
-    Archive(const std::vector<char>& data); ///< Construct from serialized data
+    explicit Archive(PathHash pathHash); ///< Construct an empty archive
+    explicit Archive(const std::vector<char>& data); ///< Construct from serialized data
     ~Archive();
     Archive& operator=(const Archive& other);
 

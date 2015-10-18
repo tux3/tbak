@@ -10,13 +10,13 @@ namespace vt100
 struct MANIPULATOR
 {
     MANIPULATOR() : s{'\033', '['} {}
-    operator char*() {return &s[0];}
+    operator const char*() const {return &s[0];}
     char s[6];
 };
 
 struct MOVEUP : public MANIPULATOR
 {
-    MOVEUP(int n)
+    explicit MOVEUP(int n)
     {
         s[2] = (char)('0'+n);
         s[3] = 'A';
@@ -27,7 +27,7 @@ struct MOVEUP : public MANIPULATOR
 
 struct MOVEDOWN : public MANIPULATOR
 {
-    MOVEDOWN(int n)
+    explicit MOVEDOWN(int n)
     {
         s[2] = (char)('0'+n);
         s[3] = 'B';
@@ -38,7 +38,7 @@ struct MOVEDOWN : public MANIPULATOR
 
 struct MOVEBACK : public MANIPULATOR
 {
-    MOVEBACK(int n)
+    explicit MOVEBACK(int n)
     {
         s[2] = (char)('0'+n);
         s[3] = 'D';

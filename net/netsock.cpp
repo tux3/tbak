@@ -120,6 +120,8 @@ NetPacket NetSock::secureRequest(NetPacket&& packet, const Server& s, const Publ
 
 bool NetSock::listen()
 {
+    int yup = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yup, sizeof(yup));
     sockaddr_in serv_addr;
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;

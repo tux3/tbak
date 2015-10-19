@@ -17,7 +17,7 @@ SourceFile::SourceFile(const Source* parent, const std::string& path)
 {
     struct stat buf;
     if (stat((parent->getPath()+"/"+path).c_str(), &buf) < 0)
-        throw runtime_error("File::readAttributes: Failed to stat "+path+'\n');
+        throw runtime_error("SourceFile: Failed to stat "+path);
 
     attrs.mtime = (uint64_t)buf.st_mtim.tv_sec;
     attrs.userId = buf.st_uid;

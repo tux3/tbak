@@ -15,7 +15,6 @@ ArchiveFile::ArchiveFile(const Archive *parent, PathHash pathHash, uint64_t mtim
 ArchiveFile::ArchiveFile(const Archive *parent, vector<char>::const_iterator &serializedData)
     : parent{parent}
 {
-
     pathHash = ::deserializeConsume<decltype(pathHash)>(serializedData);
     mtime = ::deserializeConsume<decltype(mtime)>(serializedData);
     actualSize = ::deserializeConsume<decltype(actualSize)>(serializedData);

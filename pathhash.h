@@ -19,6 +19,7 @@ public:
     bool operator<(const PathHash& other) const noexcept;
 
     std::vector<char> serialize() const;
+    void serializeInto(std::vector<char>& dest) const;
 
 public:
     static constexpr int hashlen = 18;

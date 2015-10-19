@@ -123,11 +123,12 @@ vector<char> Archive::serialize() const
 {
     lock_guard<std::recursive_mutex> lock(mutex);
     vector<char> data;
+    data.reserve(PathHash::hashlen+sizeof(actualSize)+files.size()*ArchiveFile::serializedSize());
 
     serializeAppend(data, pathHash);
     serializeAppend(data, actualSize);
     for (const ArchiveFile& file : files)
-        vectorAppend(data, file.serialize());
+        file.serializeInto(data);
 
     return data;
 }

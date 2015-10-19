@@ -46,3 +46,11 @@ std::vector<char> PathHash::serialize() const
 {
     return vector<char>(hash, hash+hashlen);
 }
+
+
+void PathHash::serializeInto(std::vector<char> &dest) const
+{
+    size_t size = dest.size();
+    dest.resize(size+hashlen);
+    copy(&hash[0], &hash[hashlen], &dest[size]);
+}

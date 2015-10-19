@@ -77,13 +77,11 @@ void ArchiveFile::overwrite(uint64_t _mtime, const std::vector<char> &data)
     file.overwrite(data);
 }
 
-std::vector<char> ArchiveFile::serialize() const
+void ArchiveFile::serializeInto(std::vector<char> &dest) const
 {
-    std::vector<char> data;
-    ::serializeAppend(data, pathHash);
-    ::serializeAppend(data, mtime);
-    ::serializeAppend(data, actualSize);
-    return data;
+    pathHash.serializeInto(dest);
+    ::uint64ToData(dest, mtime);
+    ::uint64ToData(dest, actualSize);
 }
 
 string ArchiveFile::deserializePath(std::vector<char>::const_iterator& meta)

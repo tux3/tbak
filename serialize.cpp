@@ -302,6 +302,21 @@ std::vector<char> uint64ToData(uint64_t num)
     return data;
 }
 
+void uint64ToData(std::vector<char> &dest, uint64_t num)
+{
+    char* alias = (char*)&num;
+    size_t size = dest.size();
+    dest.resize(size+sizeof(num));
+    dest[size+0] = alias[0];
+    dest[size+1] = alias[1];
+    dest[size+2] = alias[2];
+    dest[size+3] = alias[3];
+    dest[size+4] = alias[4];
+    dest[size+5] = alias[5];
+    dest[size+6] = alias[6];
+    dest[size+7] = alias[7];
+}
+
 std::vector<char> vuintToData(size_t num)
 {
     std::vector<char> data(sizeof(size_t),0);

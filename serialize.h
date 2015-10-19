@@ -43,6 +43,7 @@ std::vector<char> uint8ToData(uint8_t num);
 std::vector<char> uint16ToData(uint16_t num);
 std::vector<char> uint32ToData(uint32_t num);
 std::vector<char> uint64ToData(uint64_t num);
+void uint64ToData(std::vector<char>& dest, uint64_t num);
 std::vector<char> vuintToData(size_t num);
 std::vector<std::vector<char>> dataToDatavec(std::vector<char>::const_iterator& data);
 std::vector<char> datavecToData(const std::vector<std::vector<char>>& datavec);

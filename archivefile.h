@@ -21,7 +21,7 @@ public:
     void overwrite(uint64_t mtime, const std::vector<char>& data);
 
     /// Serializes only the metadata, not the content of the file
-    std::vector<char> serialize() const;
+    void serializeInto(std::vector<char>& dest) const;
     /// Deserializes the file path from the metadata
     static std::string deserializePath(std::vector<char>::const_iterator& meta);
     /// Size of the serialized data

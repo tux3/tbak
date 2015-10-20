@@ -17,7 +17,7 @@ std::vector<char> Compression::deflate(const std::vector<char>& in)
     strm.opaque = Z_NULL;
     strm.next_in = (unsigned char *) in.data();
     strm.avail_in = in.size();
-    deflateInit2(&strm, Z_BEST_COMPRESSION, Z_DEFLATED,
+    deflateInit2(&strm, 5, Z_DEFLATED,
                 window, memLevel, Z_DEFAULT_STRATEGY);
     do {
         strm.avail_out = chunk;

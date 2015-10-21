@@ -109,13 +109,19 @@ void Crypto::decrypt(std::vector<char> &data, const Server& s, const PublicKey &
     data = plaintext;
 }
 
-std::vector<unsigned char> Crypto::hash(std::string str)
+std::vector<unsigned char> Crypto::hash(const std::string &str)
 {
     static constexpr int hashlen = 18;
     std::vector<unsigned char> h(hashlen);
 
     crypto_generichash(h.data(), hashlen, (const unsigned char*)str.data(), str.size(), nullptr, 0);
     return h;
+}
+
+void Crypto::hashInto(const std::string& str, uint8_t *dest)
+{
+    static constexpr int hashlen = 18;
+    crypto_generichash(dest, hashlen, (const unsigned char*)str.data(), str.size(), nullptr, 0);
 }
 
 std::string Crypto::toBase64(const std::vector<unsigned char> &data)

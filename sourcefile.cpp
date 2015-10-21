@@ -12,12 +12,40 @@
 
 using namespace std;
 
-SourceFile::SourceFile(const Source* parent, const std::string& path)
-    : pathHash{path}, parent{parent}, path{path}
+SourceFile::SourceFile(const Source* parent, const string& path)
+    : pathHashReady{false}, parent{parent}, path{path}
 {
     struct stat buf;
-    if (stat((parent->getPath()+"/"+path).c_str(), &buf) < 0)
+    if (stat((parent->getPath()+'/'+path).c_str(), &buf) < 0)
         throw runtime_error("SourceFile: Failed to stat "+path);
+
+    attrs.mtime = (uint64_t)buf.st_mtim.tv_sec;
+    attrs.userId = buf.st_uid;
+    attrs.groupId = buf.st_gid;
+    attrs.mode = buf.st_mode;
+    rawSize = buf.st_size;
+}
+
+SourceFile::SourceFile(const Source* parent, string &&path)
+    : pathHashReady{false}, parent{parent}, path{move(path)}
+{
+    struct stat buf;
+    if (stat((parent->getPath()+'/'+this->path).c_str(), &buf) < 0)
+        throw runtime_error("SourceFile: Failed to stat "+this->path);
+
+    attrs.mtime = (uint64_t)buf.st_mtim.tv_sec;
+    attrs.userId = buf.st_uid;
+    attrs.groupId = buf.st_gid;
+    attrs.mode = buf.st_mode;
+    rawSize = buf.st_size;
+}
+
+SourceFile::SourceFile(const Source* parent, string &&path, const char* fullpath)
+    : pathHashReady{false}, parent{parent}, path{move(path)}
+{
+    struct stat buf;
+    if (stat(fullpath, &buf) < 0)
+        throw runtime_error(string("SourceFile: Failed to stat ")+fullpath);
 
     attrs.mtime = (uint64_t)buf.st_mtim.tv_sec;
     attrs.userId = buf.st_uid;
@@ -28,7 +56,7 @@ SourceFile::SourceFile(const Source* parent, const std::string& path)
 
 SourceFile::SourceFile(const Source* parent, const std::vector<char> &metadata,
                        uint64_t mtime, const std::vector<char> &data)
-    : parent{parent}
+    : pathHashReady{false}, parent{parent}
 {
     auto mit = metadata.begin();
     path = ::deserializeConsume<decltype(path)>(mit);
@@ -65,6 +93,11 @@ string SourceFile::getPath() const
 
 PathHash SourceFile::getPathHash() const
 {
+    if (!pathHashReady)
+    {
+        pathHash.rehash(path);
+        pathHashReady = true;
+    }
     return pathHash;
 }
 
@@ -102,7 +135,7 @@ std::vector<char> SourceFile::serializeMetadata() const
 
 bool SourceFile::operator <(const SourceFile &other) const
 {
-    return pathHash < other.pathHash;
+    return getPathHash() < other.getPathHash();
 }
 
 void SourceFile::applyAttrs()

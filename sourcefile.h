@@ -21,6 +21,8 @@ class SourceFile
 {
 public:
     SourceFile(const Source* parent, const std::string& path); ///< Construct from a real source file
+    SourceFile(const Source* parent, std::string&& path); ///< Construct from a real source file
+    SourceFile(const Source* parent, std::string&& path, const char* fullpath); ///< Construct from a real source file
     SourceFile(const Source* parent, const std::vector<char>& metadata,
                uint64_t mtime, const std::vector<char>& data); ///< Construct from downloaded data
 
@@ -39,7 +41,8 @@ private:
     void applyAttrs();
 
 private:
-    PathHash pathHash; ///< Hash of the path, for source and archive folders
+    mutable PathHash pathHash; ///< Hash of the path, for source and archive folders
+    mutable bool pathHashReady; ///< Used to compute the path hash lazily
     const Source* parent;
     std::string path; ///< Path of the file relative to it's Folder, only for source folders
     uint64_t rawSize; ///< Size of the source file

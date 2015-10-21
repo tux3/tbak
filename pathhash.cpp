@@ -9,12 +9,9 @@ PathHash::PathHash()
 {
 }
 
-PathHash::PathHash(std::string str)
+PathHash::PathHash(const string &str)
 {
-    vector<unsigned char> strhash = Crypto::hash(str);
-    uint8_t* data = reinterpret_cast<uint8_t*>(strhash.data());
-    assert(strhash.size() == hashlen);
-    copy(data, data+hashlen, hash);
+    rehash(str);
 }
 
 PathHash::PathHash(uint8_t *data)
@@ -30,6 +27,11 @@ PathHash::PathHash(const PathHash &other)
 std::string PathHash::toBase64() const
 {
     return Crypto::toBase64(hash, hashlen);
+}
+
+void PathHash::rehash(const string &str)
+{
+    Crypto::hashInto(str, hash);
 }
 
 bool PathHash::operator==(const PathHash &other) const noexcept

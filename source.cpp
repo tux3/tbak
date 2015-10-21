@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <cstring>
 #include <cassert>
+#include <iostream>
 
 using namespace std;
 
@@ -12,7 +13,7 @@ Source::Source(std::string path)
 
 }
 
-std::string Source::getPath() const
+const string &Source::getPath() const
 {
     return path;
 }
@@ -21,11 +22,23 @@ void Source::populateCache() const
 {
     sourceFiles.clear();
     size = 0;
-    vector<string> filelist = listFiles(path.c_str(), 0);
-    for (auto& file : filelist)
-        sourceFiles.push_back(SourceFile(this, normalizeFileName(path,file)));
+    vector<string> filelist;
+    listFilesInto(path.c_str(), filelist);
+    sourceFiles.reserve(filelist.size());
 
-    for (auto& file : sourceFiles)
+    // Precook a buffer to store full paths
+    char fullpath[PATH_MAX];
+    strcpy(fullpath, path.c_str());
+    fullpath[path.size()] = '/';
+    size_t fpathSize = path.size()+1;
+
+    for (auto& file : filelist)
+    {
+        strcpy(fullpath+fpathSize, file.c_str());
+        sourceFiles.emplace_back(this, move(file), fullpath);
+    }
+
+    for (const auto& file : sourceFiles)
         size += file.getRawSize();
 }
 
@@ -50,38 +63,82 @@ void Source::restoreFile(const std::vector<char> &metadata, uint64_t mtime, cons
     sourceFiles.emplace_back(this, metadata, mtime, data);
 }
 
-std::vector<std::string> Source::listFiles(const char *name, int level) const
+void Source::listFilesInto(const char *name, std::vector<string> &dest) const
 {
-    assert(name[strlen(name)-1] != '/');
-    std::vector<std::string> files;
+    size_t namelen = strlen(name);
+    assert(name[namelen-1] != '/');
     DIR *dir;
     struct dirent *entry;
 
+    // Precook a buffer to write dirent full paths in
+    char path[PATH_MAX];
+    strcpy(path, name);
+    path[namelen] = '/';
+    ++namelen;
+    size_t sizeLeft = PATH_MAX-namelen;
+
     if (!(dir = opendir(name)))
-        return files;
+        return;
     if (!(entry = readdir(dir)))
-        return files;
+        return;
 
     do
     {
-        if (entry->d_type == DT_DIR)
+        if (entry->d_type == DT_REG)
         {
-            char path[PATH_MAX];
-            int len = snprintf(path, sizeof(path)-1, "%s/%s", name, entry->d_name);
-            path[len] = 0;
-            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-                continue;
-            vector<string> newfiles = listFiles(path, level + 1);
-            files.insert(end(files), begin(newfiles), end(newfiles));
+            dest.emplace_back(entry->d_name);
         }
-        else if (entry->d_type == DT_REG)
+        else if (entry->d_type == DT_DIR)
         {
-            char path[PATH_MAX];
-            int len = snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
-            std::string s(path, len);
-            files.push_back(s);
+            if (entry->d_name[0] == '.' && (entry->d_name[1] == '\0'
+                || (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))
+                continue;
+            if (strlen(entry->d_name) > sizeLeft)
+                continue;
+            strcpy(path+namelen, entry->d_name);
+            listFilesIntoInternal(path, namelen, dest);
         }
     } while ((entry = readdir(dir)));
     closedir(dir);
-    return files;
+    return;
+}
+
+void Source::listFilesIntoInternal(char *namebuf, size_t basenameSize, std::vector<string> &dest) const
+{
+    DIR *dir;
+    struct dirent *entry;
+
+    if (!(dir = opendir(namebuf)))
+        return;
+    if (!(entry = readdir(dir)))
+        return;
+
+    // Precook a buffer to write dirent full paths in
+    size_t namelen = strlen(namebuf);
+    namebuf[namelen] = '/';
+    ++namelen;
+    size_t sizeLeft = PATH_MAX-namelen;
+
+    do
+    {
+        if (entry->d_type == DT_REG)
+        {
+            if (strlen(entry->d_name) > sizeLeft)
+                continue;
+            strcpy(namebuf+namelen, entry->d_name);
+            dest.emplace_back(namebuf+basenameSize);
+        }
+        else if (entry->d_type == DT_DIR)
+        {
+            if (entry->d_name[0] == '.' && (entry->d_name[1] == '\0'
+                || (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))
+                continue;
+            if (strlen(entry->d_name) > sizeLeft)
+                continue;
+            strcpy(namebuf+namelen, entry->d_name);
+            listFilesIntoInternal(namebuf, basenameSize, dest);
+        }
+    } while ((entry = readdir(dir)));
+    closedir(dir);
+    return;
 }

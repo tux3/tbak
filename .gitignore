@@ -1,3 +1,4 @@
+CMakeLists.txt.user
 *.pro.user*
 *.o
 moc_*

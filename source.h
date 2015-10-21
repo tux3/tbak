@@ -9,7 +9,7 @@ class Source
 {
 public:
     explicit Source(std::string path);
-    std::string getPath() const;
+    const std::string& getPath() const;
 
     void populateCache() const; ///< Super slow, will recurse through the filesystem!
     uint64_t getSize() const; ///< Uses cached data
@@ -18,7 +18,8 @@ public:
     void restoreFile(const std::vector<char>& metadata, uint64_t mtime, const std::vector<char>& data);
 
 private:
-    std::vector<std::string> listFiles(const char *name, int level) const; ///< Lists files recursively
+    void listFilesInto(const char *name, std::vector<std::string>& dest) const; ///< Lists files recursively
+    void listFilesIntoInternal(char *namebuf, size_t basenameSize, std::vector<std::string>& dest) const;
 
 private:
     std::string path;

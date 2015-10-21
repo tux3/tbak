@@ -8,13 +8,9 @@ using namespace std;
 string normalizeFileName(const string& folder, const string& file)
 {
     assert(!folder.empty() && !file.empty());
-    string fileclean = file;
-    if (file.size() > folder.size()
-            && file.find(folder) == 0)
-    {
-        fileclean = fileclean.substr(folder.size()+1);
-    }
-    return fileclean;
+    if (!file.compare(0, folder.size(), folder))
+        return file.substr(folder.size()+1);
+    return file;
 }
 
 string normalizePath(const string &folder)

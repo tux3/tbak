@@ -9,9 +9,12 @@
 #include "server.h"
 #include <iostream>
 #include <queue>
+#include <thread>
+#include <boost/lockfree/spsc_queue.hpp>
 
 using namespace std;
 using namespace vt100;
+using namespace boost::lockfree;
 
 ThreadedWorker::ThreadedWorker(NetSock &sock, Server &server, const Node &remote)
     : sock{sock}, server{server}, node{remote}
@@ -54,7 +57,7 @@ void ThreadedWorker::deleteFiles(PathHash folderHash, const vector<FileTime>& de
             netQueue.pop();
         }
 
-        if (netQueue.size() < netQueueSize && fit != deldiff.cend())
+        if (netQueue.size() < maxNetQueueSize && fit != deldiff.cend())
         {
             netQueue.push(&*fit);
             cout << STYLE_ACTIVE();
@@ -68,6 +71,47 @@ void ThreadedWorker::deleteFiles(PathHash folderHash, const vector<FileTime>& de
     cout << endl;
 }
 
+/// Compresses, encrypts, and serializes files in the background
+/// Takes a billion arguments because if it was a member function, we'd have to include
+/// boost lockfree headers in our public header, ruining compile times...
+static void zipFiles(spsc_queue<vector<char>*, capacity<ThreadedWorker::maxZipQueueSize>>& zipQueue,
+                     const std::vector<SourceFile> &updiff, atomic_int& zippedDataSize,
+                     const atomic_bool& stopNow, const PathHash& folderHash,
+                     const Server& s)
+{
+    auto fit = updiff.cbegin();
+    while (fit != updiff.cend() && !stopNow)
+    {
+        if (zippedDataSize > ThreadedWorker::maxZipDataSize
+                || zipQueue.read_available() >= ThreadedWorker::maxZipQueueSize)
+        {
+            this_thread::sleep_for(50ms);
+            continue;
+        }
+
+        // We build our serialzed data here, the consumer thread will delete it
+        vector<char>& data = *new vector<char>();
+        serializeAppend(data, folderHash);
+        serializeAppend(data, fit->getPathHash());
+        serializeAppend(data, fit->getAttrs().mtime);
+        {
+            // Encrypt the metadata and contents separately, so we can later download the metadata only
+            vector<char> fileData;
+            vector<char> meta = fit->serializeMetadata();
+            Crypto::encrypt(meta, s, s.getPublicKey());
+            vectorAppend(fileData, vuintToData(meta.size()));
+            vectorAppend(fileData, move(meta));
+            vector<char> contents = Compression::deflate(fit->readAll());
+            Crypto::encrypt(contents, s, s.getPublicKey());
+            vectorAppend(fileData, move(contents));
+            vectorAppend(data, move(fileData));
+        }
+        zippedDataSize += data.size();
+        zipQueue.push(&data);
+        ++fit;
+    }
+}
+
 void ThreadedWorker::uploadFiles(PathHash folderHash, const std::vector<SourceFile> &updiff)
 {
     queue<const SourceFile*> netQueue;
@@ -75,8 +119,13 @@ void ThreadedWorker::uploadFiles(PathHash folderHash, const std::vector<SourceFi
     auto progress = [&](){return "["+to_string(cur)+'/'+to_string(total)+"] ";};
     auto fit = updiff.cbegin();
 
-    cout << MOVEUP(1);
+    spsc_queue<vector<char>*, capacity<maxZipQueueSize>> zipQueue;
+    atomic_int zippedDataSize{0};
+    atomic_bool stopNow{false};
+    thread zipThread(zipFiles, ref(zipQueue), ref(updiff), ref(zippedDataSize),
+                     ref(stopNow), ref(folderHash), ref(server));
 
+    cout << MOVEUP(1);
     while (fit != updiff.cend() || !netQueue.empty())
     {
         if (sock.isShutdown() || server.abortall)
@@ -86,6 +135,9 @@ void ThreadedWorker::uploadFiles(PathHash folderHash, const std::vector<SourceFi
             while (queueSize--)
                 cout << CLEARLINE() << "Operation aborted." << MOVEDOWN(1);
             cout << STYLE_RESET();
+
+            stopNow = true;
+            zipThread.join();
             return;
         }
 
@@ -105,17 +157,23 @@ void ThreadedWorker::uploadFiles(PathHash folderHash, const std::vector<SourceFi
             netQueue.pop();
         }
 
-        if (netQueue.size() < netQueueSize && fit != updiff.cend())
+        if (netQueue.size() < maxNetQueueSize && fit != updiff.cend()
+                && zipQueue.read_available())
         {
             netQueue.push(&*fit);
             cout << STYLE_ACTIVE();
             cout << '\n' << progress() << "Uploading "<<fit->getPath()<<" ("
                  <<humanReadableSize(fit->getRawSize())<<')'<< STYLE_RESET() << flush;
-            node.uploadFileAsync(sock, server, folderHash, *fit);
+            vector<char>* serializedData = nullptr;
+            zipQueue.pop(&serializedData, 1);
+            zippedDataSize -= serializedData->size();
+            sock.sendEncrypted({NetPacket::UploadArchive, *serializedData}, server, node.getPk());
+            delete serializedData;
             fit++;
             cur++;
         }
     }
     cout << endl;
+    zipThread.join();
 }
 

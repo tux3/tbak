@@ -25,7 +25,7 @@ std::vector<char> Compression::deflate(const std::vector<char>& in)
 {
     std::vector<char> out;
     BrotliParams params;
-    params.quality = 6;
+    params.quality = 7;
     BrotliMemIn brotliIn(in.data(), in.size());
     BrotliVecOut brotliOut(out);
     if (!BrotliCompress(params, &brotliIn, &brotliOut))

@@ -28,7 +28,7 @@ FileLocker::~FileLocker()
 
 std::vector<char> FileLocker::read(uint64_t startPos, uint64_t size) const noexcept
 {
-    lock_guard<std::mutex> lock(mutex);
+    lock_guard<decltype(mutex)> lock(mutex);
     size_t fsize = lseek(fd, 0, SEEK_END);
     if (fsize < startPos)
         return {};
@@ -45,7 +45,7 @@ std::vector<char> FileLocker::read(uint64_t startPos, uint64_t size) const noexc
 
 std::vector<char> FileLocker::readAll() const noexcept
 {
-    lock_guard<std::mutex> lock(mutex);
+    lock_guard<decltype(mutex)> lock(mutex);
     size_t size = lseek(fd, 0, SEEK_END);
     lseek(fd, 0, SEEK_SET);
 
@@ -58,34 +58,34 @@ std::vector<char> FileLocker::readAll() const noexcept
 
 bool FileLocker::remove() const noexcept
 {
-    lock_guard<std::mutex> lock(mutex);
+    lock_guard<decltype(mutex)> lock(mutex);
     return std::remove(path.c_str()) == 0;
 }
 
 bool FileLocker::truncate() const noexcept
 {
-    lock_guard<std::mutex> lock(mutex);
+    lock_guard<decltype(mutex)> lock(mutex);
     lseek(fd, 0, SEEK_SET);
     return ftruncate(fd, 0) == 0;
 }
 
 bool FileLocker::write(const char* data, size_t size) const noexcept
 {
-    lock_guard<std::mutex> lock(mutex);
+    lock_guard<decltype(mutex)> lock(mutex);
     auto result = ::write(fd, data, size);
     return (result>0 && (size_t)result == size);
 }
 
 bool FileLocker::write(const std::vector<char>& data) const noexcept
 {
-    lock_guard<std::mutex> lock(mutex);
+    lock_guard<decltype(mutex)> lock(mutex);
     auto result = ::write(fd, data.data(), data.size());
     return (result>0 && (size_t)result == data.size());
 }
 
 bool FileLocker::overwrite(const char* data, size_t size) const noexcept
 {
-    lock_guard<std::mutex> lock(mutex);
+    lock_guard<decltype(mutex)> lock(mutex);
     if (!truncate())
         return false;
     return write(data, size);
@@ -93,7 +93,7 @@ bool FileLocker::overwrite(const char* data, size_t size) const noexcept
 
 bool FileLocker::overwrite(const std::vector<char>& data) const noexcept
 {
-    lock_guard<std::mutex> lock(mutex);
+    lock_guard<decltype(mutex)> lock(mutex);
     if (!truncate())
         return false;
     return write(data);

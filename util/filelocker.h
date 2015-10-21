@@ -25,7 +25,7 @@ public:
 
 private:
     int fd;
-    mutable std::mutex mutex;
+    mutable std::recursive_mutex mutex;
     const std::string path;
 };
 

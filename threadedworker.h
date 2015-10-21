@@ -17,8 +17,11 @@ public:
     void deleteFiles(PathHash folderHash, const std::vector<FileTime>& deldiff);
     void uploadFiles(PathHash folderHash, const std::vector<SourceFile>& updiff);
 
+public:
+    // Limits
+    static constexpr int maxNetQueueSize = 5,
+                        maxZipQueueSize = 4096, maxZipDataSize = 50*1024*1024;
 private:
-    static constexpr int netQueueSize = 5, prepocQueueSize = 25;
     NetSock& sock;
     Server& server;
     const Node& node;

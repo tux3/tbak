@@ -28,7 +28,5 @@ Then you would just run <code>tbak folder push /some/folder/somewhere</code> any
 
 This code is not portable C++, it was written for Linux and uses several advanced non-portable features not available in standard C++ like directories and sockets...
 
-Two libraries are used, zlib for compression and libsodium for encryption.
-The project uses CMake as a build system.
-Compiling can be done like this: <code>mkdir build && cd build && cmake .. && make</code>.<br/>
-Or, by simply passing all source files to g++ while linking <code>-lsodium -lz</code>
+The libraries used are [libbrotli](https://github.com/bagder/libbrotli) for compression, [libsodium](https://github.com/jedisct1/libsodium) for encryption and [Boost Lockfree](http://www.boost.org/doc/libs/1_58_0/doc/html/lockfree.html).
+The project uses CMake as a build system, version 3.1 minimum.

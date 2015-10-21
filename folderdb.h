@@ -13,6 +13,7 @@ class FolderDB
 public:
     explicit FolderDB(const std::string& path); ///< Reads serialized data from file
     ~FolderDB(); ///< Saves automatically
+    void save() const;
 
     const std::vector<Source>& getSources() const;
     const std::vector<Archive>& getArchives() const;
@@ -26,7 +27,6 @@ public:
 
 protected:
     void load();
-    void save() const;
     std::vector<char> serialize() const;
     void deserialize(const std::vector<char>& data);
 

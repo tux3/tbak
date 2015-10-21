@@ -109,7 +109,7 @@ void Server::handleClient(NetSock& client)
         try
         {
             if (abortall)
-                return;
+                break;
 
             if (client.isShutdown())
             {
@@ -193,4 +193,6 @@ void Server::handleClient(NetSock& client)
             break;
         }
     }
+
+    fdb.save();
 }

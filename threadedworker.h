@@ -19,7 +19,7 @@ public:
 
 public:
     // Limits
-    static constexpr int maxNetQueueSize = 5,
+    static constexpr int maxNetQueueSize = 10,
                         maxZipQueueSize = 4096, maxZipDataSize = 50*1024*1024;
 private:
     NetSock& sock;

@@ -229,6 +229,12 @@ bool folderPush(const string &path)
         cout <<vt100::CLEARLINE()<<"Need to upload "<<updiff.size()
             <<" files and delete "<<deldiff.size()<<" remote files"<<endl;
 
+        // If the upload might be interrupted, it's more useful to not upload in a random-ish order
+        sort(begin(updiff), end(updiff), [](const SourceFile& f1, const SourceFile& f2)
+        {
+            return f1.getPath()<f2.getPath();
+        });
+
         ThreadedWorker worker(sock, server, node);
         worker.uploadFiles(sourcePathHash, updiff);
         worker.deleteFiles(sourcePathHash, deldiff);

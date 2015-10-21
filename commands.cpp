@@ -148,6 +148,8 @@ bool folderPush(const string &path)
     const vector<Node>& nodes = ndb.getNodes();
     for (const Node& node : nodes)
     {
+        if (Server::abortall)
+            return true;
         NetSock sock;
         try {
             NetSock sockTry(NetAddr{node.getUri()});
@@ -246,6 +248,8 @@ void folderStatus(const string &path)
     const vector<Node>& nodes = ndb.getNodes();
     for (const Node& node : nodes)
     {
+        if (Server::abortall)
+            return;
         NetSock sock;
         try {
             NetSock sockTry(NetAddr{node.getUri()});
@@ -301,6 +305,8 @@ bool folderRestore(const string &path)
     const vector<Node>& nodes = ndb.getNodes();
     for (const Node& node : nodes)
     {
+        if (Server::abortall)
+            return true;
         NetSock sock;
         try {
             NetSock sockTry(NetAddr{node.getUri()});

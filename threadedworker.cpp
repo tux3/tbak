@@ -35,7 +35,7 @@ void ThreadedWorker::deleteFiles(PathHash folderHash, const vector<FileTime>& de
             cout << MOVEUP(queueSize) << STYLE_ERROR();
             while (queueSize--)
                 cout << CLEARLINE() << "Operation aborted." << MOVEDOWN(1);
-            cout << STYLE_RESET() << endl;
+            cout << STYLE_RESET();
             return;
         }
 
@@ -82,10 +82,10 @@ void ThreadedWorker::uploadFiles(PathHash folderHash, const std::vector<SourceFi
         if (sock.isShutdown() || server.abortall)
         {
             int queueSize = netQueue.size();
-            cout << MOVEUP(queueSize-1) << STYLE_ERROR();
+            cout << MOVEUP(queueSize) << STYLE_ERROR();
             while (queueSize--)
                 cout << CLEARLINE() << "Operation aborted." << MOVEDOWN(1);
-            cout << STYLE_RESET() << endl;
+            cout << STYLE_RESET();
             return;
         }
 
